@@ -14,6 +14,8 @@ import 'screens/hod/hod_dashboard.dart';
 import 'screens/hod/hod_approval_screen.dart';
 import 'screens/hod/dept_report_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
+import 'screens/student/activity_dashboard.dart';
+import 'screens/student/add_activity_screen.dart';
 
 /// Bridges ChangeNotifier → Listenable so GoRouter re-evaluates
 /// redirects whenever AuthProvider fires notifyListeners().
@@ -51,19 +53,20 @@ GoRouter buildRouter(AuthProvider authProvider) {
       if (isLoginPage) {
         return switch (auth.role) {
           'student' => '/student/dashboard',
-          'mentor'  => '/mentor/dashboard',
-          'hod'     => '/hod/dashboard',
-          'admin'   => '/admin/dashboard',
-          _         => '/login',
+          'mentor' => '/mentor/dashboard',
+          'hod' => '/hod/dashboard',
+          'admin' => '/admin/dashboard',
+          _ => '/login',
         };
       }
 
       // Role-based path protection
       final path = state.matchedLocation;
-      if (path.startsWith('/student') && auth.role != 'student') return '/login';
-      if (path.startsWith('/mentor') && auth.role != 'mentor')  return '/login';
-      if (path.startsWith('/hod')     && auth.role != 'hod')    return '/login';
-      if (path.startsWith('/admin')   && auth.role != 'admin')  return '/login';
+      if (path.startsWith('/student') && auth.role != 'student')
+        return '/login';
+      if (path.startsWith('/mentor') && auth.role != 'mentor') return '/login';
+      if (path.startsWith('/hod') && auth.role != 'hod') return '/login';
+      if (path.startsWith('/admin') && auth.role != 'admin') return '/login';
 
       return null;
     },
@@ -73,7 +76,11 @@ GoRouter buildRouter(AuthProvider authProvider) {
       // ── STUDENT ──────────────────────────────────────────────
       GoRoute(
         path: '/student/dashboard',
-        builder: (c, s) => const StudentDashboard(),
+        builder: (c, s) => const ActivityDashboard(),
+      ),
+      GoRoute(
+        path: '/student/add-activity',
+        builder: (c, s) => const AddActivityScreen(),
       ),
       GoRoute(
         path: '/student/form/:formId',

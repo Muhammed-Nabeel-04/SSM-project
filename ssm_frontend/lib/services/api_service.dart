@@ -244,4 +244,123 @@ class ApiService {
         headers: await _authHeaders());
     return _handle(res);
   }
+
+  // ─── ACTIVITIES ───────────────────────────────────────────────────────────
+
+  /// Submit one activity with optional certificate file.
+  static Future<Map<String, dynamic>> submitActivity({
+    required Map<String, String> fields,
+    File? file,
+  }) async {
+    final token = await TokenService.getToken();
+    final request = http.MultipartRequest('POST', _url('/activity/submit'));
+
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // All form fields
+    request.fields.addAll(fields);
+
+    // Optional file
+    if (file != null) {
+      final ext = file.path.split('.').last.toLowerCase();
+      final mimeType = ext == 'pdf' ? 'application/pdf' : 'image/$ext';
+      request.files.add(await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: MediaType.parse(mimeType),
+      ));
+    }
+
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    return _handle(res);
+  }
+
+  /// Fetch student's activity log for current academic year.
+  static Future<Map<String, dynamic>> getMyActivities({
+    String? category,
+    String? mentorStatus,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final params = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (category != null) params['category'] = category;
+    if (mentorStatus != null) params['mentor_status'] = mentorStatus;
+
+    final res = await http.get(
+      _url('/activity/my', params),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  /// Delete a pending activity.
+  static Future<void> deleteActivity(int activityId) async {
+    final res = await http.delete(
+      _url('/activity/$activityId'),
+      headers: await _authHeaders(),
+    );
+    _handle(res);
+  }
+
+  /// Mentor: get pending activities from assigned students.
+  static Future<Map<String, dynamic>> getMentorPendingActivities({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final res = await http.get(
+      _url('/activity/mentor/pending',
+          {'limit': limit.toString(), 'offset': offset.toString()}),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  /// Mentor: approve an activity.
+  static Future<Map<String, dynamic>> approveActivity(int activityId,
+      {String? note}) async {
+    final request = http.MultipartRequest(
+        'POST', _url('/activity/mentor/$activityId/approve'));
+    request.headers.addAll(await _authHeaders());
+    if (note != null) request.fields['note'] = note;
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    return _handle(res);
+  }
+
+  /// Mentor: reject an activity.
+  static Future<Map<String, dynamic>> rejectActivity(
+      int activityId, String note) async {
+    final request = http.MultipartRequest(
+        'POST', _url('/activity/mentor/$activityId/reject'));
+    request.headers.addAll(await _authHeaders());
+    request.fields['note'] = note;
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    return _handle(res);
+  }
+
+  /// Token refresh — call when API returns 401.
+  static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final res = await http.post(
+      _url('/auth/refresh'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'refresh_token': refreshToken}),
+    );
+    return _handle(res);
+  }
+
+  /// Update user profile fields.
+  static Future<Map<String, dynamic>> updateProfile(
+      Map<String, dynamic> payload) async {
+    final res = await http.put(
+      _url('/auth/profile'),
+      headers: await _authHeaders(),
+      body: json.encode(payload),
+    );
+    return _handle(res);
+  }
 }

@@ -18,18 +18,18 @@ dependencies:
   # State Management
   provider: ^6.1.2
 
-  # Local Storage (token only — no sensitive data in local storage)
+  # Local Storage
   flutter_secure_storage: ^9.0.0
 
   # Navigation
   go_router: ^13.2.0
 
-  # UI
+  # UI & Design
   cupertino_icons: ^1.0.6
-  fl_chart: ^0.67.0          # score charts
-  flutter_animate: ^4.5.0   # smooth animations
+  fl_chart: ^0.67.0           # score charts
+  flutter_animate: ^4.5.0    # smooth animations
   google_fonts: ^6.2.1
-  shimmer: ^3.0.0            # loading skeletons
+  shimmer: ^3.0.0             # loading skeletons
 
   # File picker & upload
   file_picker: ^8.0.3
@@ -38,6 +38,9 @@ dependencies:
   # Utilities
   intl: ^0.19.0
   equatable: ^2.0.5
+  connectivity_plus: ^6.0.3   # Network status
+  share_plus: ^10.0.0         # Sharing content
+  path_provider: ^2.1.4       # File system access
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +49,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/images/
     - assets/icons/

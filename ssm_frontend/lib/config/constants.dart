@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Brand
-  static const primary = Color(0xFF1A3C6E);       // Deep navy
+  static const primary = Color(0xFF1A3C6E);
   static const primaryLight = Color(0xFF2A5298);
-  static const accent = Color(0xFF00BFA5);         // Teal accent
+  static const accent = Color(0xFF00BFA5);
   static const accentLight = Color(0xFF4DD0C4);
 
   // Role Colors
@@ -13,7 +13,7 @@ class AppColors {
   static const hodColor = Color(0xFF6A1B9A);
   static const adminColor = Color(0xFFB71C1C);
 
-  // Category Colors (for score cards)
+  // Category Colors
   static const academic = Color(0xFF1565C0);
   static const development = Color(0xFF2E7D32);
   static const skill = Color(0xFFE65100);
@@ -61,7 +61,7 @@ class AppStrings {
 
 class AppConfig {
   // Change this to your FastAPI server IP when testing on device
-  static const baseUrl = 'http://10.0.2.2:8000';  // Android emulator → localhost
+  static const baseUrl = 'http://10.0.2.2:8000'; // Android emulator → localhost
 
   static const tokenKey = 'ssm_access_token';
   static const userRoleKey = 'ssm_user_role';
