@@ -6,9 +6,11 @@ from models.user import UserRole
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
 
 class LoginRequest(BaseModel):
-    register_number: str
-    password: str
-    device_info: Optional[str] = None
+    # Student uses register_number, Mentor/HOD/Admin use email
+    register_number: Optional[str] = None
+    email:           Optional[str] = None
+    password:        str
+    device_info:     Optional[str] = None
 
 
 class TokenResponse(BaseModel):
@@ -75,27 +77,11 @@ class UserOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ProfileUpdate(BaseModel):        # ← NEW: student self-update
-    name:          Optional[str]   = None
-    phone:         Optional[str]   = None
-    semester:      Optional[int]   = None
-    batch:         Optional[str]   = None
-    year_of_study: Optional[int]   = None
-    section:       Optional[str]   = None
-
-    @field_validator("semester")
-    @classmethod
-    def check_semester(cls, v):
-        if v is not None and not (1 <= v <= 8):
-            raise ValueError("Semester must be 1–8")
-        return v
-
-    @field_validator("year_of_study")
-    @classmethod
-    def check_year(cls, v):
-        if v is not None and not (1 <= v <= 4):
-            raise ValueError("Year of study must be 1–4")
-        return v
+class ProfileUpdate(BaseModel):
+    # Only these can be changed by the user themselves
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    # semester, batch, year_of_study, section are admin-only (set via CSV import)
 
 
 # ─── DEPARTMENT ───────────────────────────────────────────────────────────────

@@ -29,12 +29,21 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final data = await ApiService.getMyActivities();
-      setState(() { _data = data; _loading = false; });
+      setState(() {
+        _data = data;
+        _loading = false;
+      });
     } on ApiException catch (e) {
-      setState(() { _error = e.message; _loading = false; });
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
     }
   }
 
@@ -42,7 +51,7 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
     final activities = (_data?['activities'] as List?) ?? [];
-    final score      = _data?['live_score'] as Map?;
+    final score = _data?['live_score'] as Map?;
 
     final filtered = _filterCategory == 'all'
         ? activities
@@ -63,8 +72,35 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
         actions: [
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
           IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Profile',
+            onPressed: () => context.push('/profile'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded),
-            onPressed: () => auth.logout(),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Logout',
+                          style: TextStyle(color: AppColors.error)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true && context.mounted) {
+                context.read<AuthProvider>().logout();
+              }
+            },
           ),
         ],
       ),
@@ -79,7 +115,8 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                     SliverToBoxAdapter(child: _ScoreCard(score: score)),
 
                     // ── CATEGORY FILTER ───────────────────────────────────
-                    SliverToBoxAdapter(child: _CategoryFilter(
+                    SliverToBoxAdapter(
+                        child: _CategoryFilter(
                       selected: _filterCategory,
                       onChanged: (v) => setState(() => _filterCategory = v),
                     )),
@@ -88,10 +125,12 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                     if (filtered.isEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 32),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 60, horizontal: 32),
                           child: Column(children: [
                             Icon(Icons.playlist_add_rounded,
-                                size: 56, color: AppColors.textLight.withOpacity(0.4)),
+                                size: 56,
+                                color: AppColors.textLight.withOpacity(0.4)),
                             const SizedBox(height: 12),
                             Text(
                               _filterCategory == 'all'
@@ -111,7 +150,8 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) => _ActivityCard(
                               activity: filtered[i],
-                              onDelete: () => _deleteActivity(filtered[i]['id']),
+                              onDelete: () =>
+                                  _deleteActivity(filtered[i]['id']),
                             ),
                             childCount: filtered.length,
                           ),
@@ -137,12 +177,16 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Activity?'),
-        content: const Text('This activity and its document will be permanently deleted.'),
+        content: const Text(
+            'This activity and its document will be permanently deleted.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -153,17 +197,29 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
       _load();
     } on ApiException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
   }
 
   String _categoryOf(String type) {
-    const devTypes  = ['nptel','online_cert','internship','competition','publication','prof_program'];
-    const skillTypes= ['placement','higher_study','industry_int','research'];
-    const leadTypes = ['formal_role','event_org','community'];
-    if (devTypes.contains(type))   return 'development';
+    const devTypes = [
+      'nptel',
+      'online_cert',
+      'internship',
+      'competition',
+      'publication',
+      'prof_program'
+    ];
+    const skillTypes = [
+      'placement',
+      'higher_study',
+      'industry_int',
+      'research'
+    ];
+    const leadTypes = ['formal_role', 'event_org', 'community'];
+    if (devTypes.contains(type)) return 'development';
     if (skillTypes.contains(type)) return 'skill';
-    if (leadTypes.contains(type))  return 'leadership';
+    if (leadTypes.contains(type)) return 'leadership';
     return 'academic';
   }
 }
@@ -182,7 +238,8 @@ class _ScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
             colors: [AppColors.primary, AppColors.primaryLight],
-            begin: Alignment.topLeft, end: Alignment.bottomRight),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
       ),
       child: score == null
@@ -194,23 +251,27 @@ class _ScoreCard extends StatelessWidget {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const Text('Live Score',
                       style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  Text('${(score!['grand_total'] ?? 0).toStringAsFixed(0)} / 500',
+                  Text(
+                      '${(score!['grand_total'] ?? 0).toStringAsFixed(0)} / 500',
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 28,
                           fontWeight: FontWeight.w800)),
                 ]),
-                StarRating(stars: (score!['star_rating'] ?? 0) as int,
-                    size: 24),
+                StarRating(
+                    stars: (score!['star_rating'] ?? 0) as int, size: 24),
               ]),
               const SizedBox(height: 14),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                _ScorePill('Academic',    score!['academic']    ?? 0, AppColors.academic),
-                _ScorePill('Dev',         score!['development'] ?? 0, AppColors.development),
-                _ScorePill('Skill',       score!['skill']       ?? 0, AppColors.skill),
-                _ScorePill('Discipline',  score!['discipline']  ?? 0, AppColors.discipline),
-                _ScorePill('Leadership',  score!['leadership']  ?? 0, AppColors.leadership),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                _ScorePill(
+                    'Academic', score!['academic'] ?? 0, AppColors.academic),
+                _ScorePill(
+                    'Dev', score!['development'] ?? 0, AppColors.development),
+                _ScorePill('Skill', score!['skill'] ?? 0, AppColors.skill),
+                _ScorePill('Discipline', score!['discipline'] ?? 0,
+                    AppColors.discipline),
+                _ScorePill('Leadership', score!['leadership'] ?? 0,
+                    AppColors.leadership),
               ]),
             ]),
     );
@@ -227,10 +288,9 @@ class _ScorePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       Text(score.toStringAsFixed(0),
-          style: TextStyle(color: Colors.white,
-              fontWeight: FontWeight.w700, fontSize: 16)),
-      Text(label,
-          style: const TextStyle(color: Colors.white60, fontSize: 9)),
+          style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+      Text(label, style: const TextStyle(color: Colors.white60, fontSize: 9)),
     ]);
   }
 }
@@ -262,7 +322,8 @@ class _CategoryFilter extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
               label: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(item.$3, size: 14,
+                Icon(item.$3,
+                    size: 14,
                     color: isSelected ? Colors.white : AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(item.$2),
@@ -272,7 +333,8 @@ class _CategoryFilter extends StatelessWidget {
               selectedColor: AppColors.primary,
               labelStyle: TextStyle(
                   color: isSelected ? Colors.white : AppColors.textSecondary,
-                  fontSize: 12, fontWeight: FontWeight.w500),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500),
               showCheckmark: false,
               padding: const EdgeInsets.symmetric(horizontal: 6),
             ),
@@ -292,14 +354,14 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type        = activity['activity_type'] as String? ?? '';
-    final ocrStatus   = activity['ocr_status']   as String? ?? '';
-    final mentorStatus= activity['mentor_status'] as String? ?? '';
-    final data        = activity['data'] as Map? ?? {};
-    final filename    = activity['filename'] as String?;
+    final type = activity['activity_type'] as String? ?? '';
+    final ocrStatus = activity['ocr_status'] as String? ?? '';
+    final mentorStatus = activity['mentor_status'] as String? ?? '';
+    final data = activity['data'] as Map? ?? {};
+    final filename = activity['filename'] as String?;
     final submittedAt = activity['submitted_at'] as String?;
-    final mentorNote  = activity['mentor_note'] as String?;
-    final ocrNote     = activity['ocr_note']    as String?;
+    final mentorNote = activity['mentor_note'] as String?;
+    final ocrNote = activity['ocr_note'] as String?;
 
     final (icon, color) = _typeInfo(type);
     final (statusColor, statusLabel) = _statusInfo(ocrStatus, mentorStatus);
@@ -319,15 +381,17 @@ class _ActivityCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_typeLabel(type),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14)),
-                if (submittedAt != null)
-                  Text(_formatDate(submittedAt),
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 11)),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_typeLabel(type),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14)),
+                    if (submittedAt != null)
+                      Text(_formatDate(submittedAt),
+                          style: const TextStyle(
+                              color: AppColors.textSecondary, fontSize: 11)),
+                  ]),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -337,7 +401,9 @@ class _ActivityCard extends StatelessWidget {
                 border: Border.all(color: statusColor.withOpacity(0.3)),
               ),
               child: Text(statusLabel,
-                  style: TextStyle(color: statusColor, fontSize: 11,
+                  style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600)),
             ),
           ]),
@@ -345,23 +411,28 @@ class _ActivityCard extends StatelessWidget {
           // ── Activity details ───────────────────────────────────────────
           if (data.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 4,
-              children: data.entries.take(3).map((e) => _DataTag(
-                  label: _fieldLabel(e.key),
-                  value: e.value.toString())).toList(),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: data.entries
+                  .take(3)
+                  .map((e) => _DataTag(
+                      label: _fieldLabel(e.key), value: e.value.toString()))
+                  .toList(),
             ),
           ],
 
           if (filename != null) ...[
             const SizedBox(height: 6),
             Row(children: [
-              const Icon(Icons.attach_file_rounded, size: 13,
-                  color: AppColors.textSecondary),
+              const Icon(Icons.attach_file_rounded,
+                  size: 13, color: AppColors.textSecondary),
               const SizedBox(width: 4),
-              Expanded(child: Text(filename,
-                  style: const TextStyle(
-                      fontSize: 11, color: AppColors.textSecondary),
-                  overflow: TextOverflow.ellipsis)),
+              Expanded(
+                  child: Text(filename,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.textSecondary),
+                      overflow: TextOverflow.ellipsis)),
             ]),
           ],
 
@@ -380,7 +451,8 @@ class _ActivityCard extends StatelessWidget {
                 const Icon(Icons.warning_amber_rounded,
                     color: AppColors.error, size: 16),
                 const SizedBox(width: 6),
-                Expanded(child: Text(
+                Expanded(
+                    child: Text(
                   ocrNote ?? 'Document verification failed. Please re-upload.',
                   style: const TextStyle(color: AppColors.error, fontSize: 11),
                 )),
@@ -410,7 +482,8 @@ class _ActivityCard extends StatelessWidget {
                 label: const Text('Delete',
                     style: TextStyle(color: AppColors.error, fontSize: 12)),
                 style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
               ),
             ),
           ],
@@ -420,77 +493,79 @@ class _ActivityCard extends StatelessWidget {
   }
 
   (IconData, Color) _typeInfo(String type) => switch (type) {
-    'gpa_update'   => (Icons.school_rounded,         AppColors.academic),
-    'project'      => (Icons.code_rounded,            AppColors.academic),
-    'nptel'        => (Icons.workspace_premium_rounded, AppColors.development),
-    'online_cert'  => (Icons.laptop_rounded,          AppColors.development),
-    'internship'   => (Icons.work_outline_rounded,    AppColors.development),
-    'competition'  => (Icons.emoji_events_rounded,    AppColors.development),
-    'publication'  => (Icons.article_rounded,         AppColors.development),
-    'prof_program' => (Icons.event_rounded,           AppColors.development),
-    'placement'    => (Icons.business_center_rounded, AppColors.skill),
-    'higher_study' => (Icons.import_contacts_rounded, AppColors.skill),
-    'industry_int' => (Icons.factory_rounded,         AppColors.skill),
-    'research'     => (Icons.biotech_rounded,         AppColors.skill),
-    'formal_role'  => (Icons.star_rounded,            AppColors.leadership),
-    'event_org'    => (Icons.celebration_rounded,     AppColors.leadership),
-    'community'    => (Icons.group_rounded,           AppColors.leadership),
-    _              => (Icons.task_rounded,            AppColors.textSecondary),
-  };
+        'gpa_update' => (Icons.school_rounded, AppColors.academic),
+        'project' => (Icons.code_rounded, AppColors.academic),
+        'nptel' => (Icons.workspace_premium_rounded, AppColors.development),
+        'online_cert' => (Icons.laptop_rounded, AppColors.development),
+        'internship' => (Icons.work_outline_rounded, AppColors.development),
+        'competition' => (Icons.emoji_events_rounded, AppColors.development),
+        'publication' => (Icons.article_rounded, AppColors.development),
+        'prof_program' => (Icons.event_rounded, AppColors.development),
+        'placement' => (Icons.business_center_rounded, AppColors.skill),
+        'higher_study' => (Icons.import_contacts_rounded, AppColors.skill),
+        'industry_int' => (Icons.factory_rounded, AppColors.skill),
+        'research' => (Icons.biotech_rounded, AppColors.skill),
+        'formal_role' => (Icons.star_rounded, AppColors.leadership),
+        'event_org' => (Icons.celebration_rounded, AppColors.leadership),
+        'community' => (Icons.group_rounded, AppColors.leadership),
+        _ => (Icons.task_rounded, AppColors.textSecondary),
+      };
 
   (Color, String) _statusInfo(String ocr, String mentor) {
-    if (ocr == 'failed')             return (AppColors.error,       'Re-upload needed');
-    if (mentor == 'approved')        return (AppColors.success,     'Approved ✓');
-    if (mentor == 'rejected')        return (AppColors.error,       'Rejected');
-    if (mentor == 'not_required')    return (AppColors.success,     'Auto-verified ✓');
-    if (ocr == 'valid')              return (AppColors.submitted,   'Sent to mentor');
-    if (ocr == 'review')             return (AppColors.mentorReview,'Under review');
+    if (ocr == 'failed') return (AppColors.error, 'Re-upload needed');
+    if (mentor == 'approved') return (AppColors.success, 'Approved ✓');
+    if (mentor == 'rejected') return (AppColors.error, 'Rejected');
+    if (mentor == 'not_required') return (AppColors.success, 'Auto-verified ✓');
+    if (ocr == 'valid') return (AppColors.submitted, 'Sent to mentor');
+    if (ocr == 'review') return (AppColors.mentorReview, 'Under review');
     return (AppColors.draft, 'Pending');
   }
 
   String _typeLabel(String type) => switch (type) {
-    'gpa_update'   => 'Academic Update (GPA / Attendance)',
-    'project'      => 'Project / Beyond Curriculum',
-    'nptel'        => 'NPTEL / SWAYAM Certificate',
-    'online_cert'  => 'Online Course Certificate',
-    'internship'   => 'Internship / In-plant Training',
-    'competition'  => 'Competition / Hackathon',
-    'publication'  => 'Publication / Patent / Prototype',
-    'prof_program' => 'Professional Skill Program',
-    'placement'    => 'Placement Offer',
-    'higher_study' => 'Higher Studies (GATE / GRE)',
-    'industry_int' => 'Industry Interaction',
-    'research'     => 'Research Paper',
-    'formal_role'  => 'Formal Leadership Role',
-    'event_org'    => 'Event Organization',
-    'community'    => 'Community / Social Service',
-    _              => type,
-  };
+        'gpa_update' => 'Academic Update (GPA / Attendance)',
+        'project' => 'Project / Beyond Curriculum',
+        'nptel' => 'NPTEL / SWAYAM Certificate',
+        'online_cert' => 'Online Course Certificate',
+        'internship' => 'Internship / In-plant Training',
+        'competition' => 'Competition / Hackathon',
+        'publication' => 'Publication / Patent / Prototype',
+        'prof_program' => 'Professional Skill Program',
+        'placement' => 'Placement Offer',
+        'higher_study' => 'Higher Studies (GATE / GRE)',
+        'industry_int' => 'Industry Interaction',
+        'research' => 'Research Paper',
+        'formal_role' => 'Formal Leadership Role',
+        'event_org' => 'Event Organization',
+        'community' => 'Community / Social Service',
+        _ => type,
+      };
 
   String _fieldLabel(String key) => switch (key) {
-    'nptel_tier'          => 'Tier',
-    'course_name'         => 'Course',
-    'platform_name'       => 'Platform',
-    'internship_company'  => 'Company',
-    'internship_duration' => 'Duration',
-    'competition_name'    => 'Event',
-    'competition_result'  => 'Result',
-    'publication_title'   => 'Title',
-    'placement_company'   => 'Company',
-    'placement_lpa'       => 'LPA',
-    'role_level'          => 'Level',
-    'event_level'         => 'Level',
-    'internal_gpa'        => 'Int. GPA',
-    'university_gpa'      => 'Univ. GPA',
-    'attendance_pct'      => 'Attendance',
-    _                     => key,
-  };
+        'nptel_tier' => 'Tier',
+        'course_name' => 'Course',
+        'platform_name' => 'Platform',
+        'internship_company' => 'Company',
+        'internship_duration' => 'Duration',
+        'competition_name' => 'Event',
+        'competition_result' => 'Result',
+        'publication_title' => 'Title',
+        'placement_company' => 'Company',
+        'placement_lpa' => 'LPA',
+        'role_level' => 'Level',
+        'event_level' => 'Level',
+        'internal_gpa' => 'Int. GPA',
+        'university_gpa' => 'Univ. GPA',
+        'attendance_pct' => 'Attendance',
+        _ => key,
+      };
 
   String _formatDate(String iso) {
     try {
       final d = DateTime.parse(iso);
       return '${d.day}/${d.month}/${d.year}';
-    } catch (_) { return iso; }
+    } catch (_) {
+      return iso;
+    }
   }
 }
 

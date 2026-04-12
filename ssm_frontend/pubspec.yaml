@@ -38,9 +38,10 @@ dependencies:
   # Utilities
   intl: ^0.19.0
   equatable: ^2.0.5
-  connectivity_plus: ^6.0.3   # Network status
-  share_plus: ^10.0.0         # Sharing content
+  connectivity_plus: ^6.0.3   # Network status / Offline check
+  share_plus: ^10.0.0         # Sharing / CSV export
   path_provider: ^2.1.4       # File system access
+  url_launcher: ^6.3.0        # Open external browser/URLs
 
 dev_dependencies:
   flutter_test:

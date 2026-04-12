@@ -1,0 +1,3 @@
+register_number,name,email,role,phone,department_name,mentor_register_number
+M001,Dr. Smith,smith@college.edu,mentor,9876543210,Computer Science,
+711521CS001,John,john@college.edu,student,9876543211,Computer Science,M001

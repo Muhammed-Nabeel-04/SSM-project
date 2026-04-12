@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/offline_wrapper.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
@@ -26,11 +27,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading =
+          _data == null; // Only show full screen loader if no data exists
+      _error = null;
+    });
     try {
       final data = await ApiService.getStudentDashboard();
-      setState(() { _data = data; _loading = false; });
+      setState(() {
+        _data = data;
+        _loading = false;
+      });
     } on ApiException catch (e) {
-      setState(() { _error = e.message; _loading = false; });
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
     }
   }
 
@@ -40,8 +52,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       if (mounted) context.push('/student/form/${res['form_id']}');
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: AppColors.error));
       }
     }
   }
@@ -61,6 +73,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ]),
         actions: [
           IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Profile',
+            onPressed: () => context.push('/profile'),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _load,
           ),
@@ -72,90 +89,108 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: ErrorBanner(_error!))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: CustomScrollView(slivers: [
-                    // ── INFO HEADER ──────────────────────────────
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [AppColors.primary, AppColors.primaryLight]),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(children: [
-                          const CircleAvatar(
-                            radius: 28,
-                            backgroundColor: Colors.white24,
-                            child: Icon(Icons.person_rounded,
-                                color: Colors.white, size: 32),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Text(
-                              _data?['student'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${forms.length} form(s) submitted',
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 13),
-                            ),
-                          ]),
-                        ]),
-                      ),
-                    ),
-
-                    // ── FORMS LIST ───────────────────────────────
-                    if (forms.isEmpty)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: Column(children: [
-                            Icon(Icons.assignment_outlined,
-                                size: 64,
-                                color: AppColors.textLight.withOpacity(0.5)),
-                            const SizedBox(height: 16),
-                            const Text('No SSM form yet',
-                                style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 16)),
-                            const SizedBox(height: 8),
-                            const Text(
-                                'Create your first form for this academic year',
-                                style: TextStyle(
-                                    color: AppColors.textLight,
-                                    fontSize: 13),
-                                textAlign: TextAlign.center),
-                          ]),
+      body: OfflineWrapper(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: _error != null
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: Center(child: ErrorBanner(_error!)),
                         ),
                       )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => _FormCard(form: forms[i]),
-                            childCount: forms.length,
+                    : CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          // ── INFO HEADER ──────────────────────────────
+                          SliverToBoxAdapter(
+                            child: Container(
+                              margin: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryLight
+                                ]),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(children: [
+                                const CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: Colors.white24,
+                                  child: Icon(Icons.person_rounded,
+                                      color: Colors.white, size: 32),
+                                ),
+                                const SizedBox(width: 16),
+                                Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _data?['student'] ?? '',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${forms.length} form(s) submitted',
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13),
+                                      ),
+                                    ]),
+                              ]),
+                            ),
                           ),
-                        ),
-                      ),
 
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                  ]),
-                ),
+                          // ── FORMS LIST ───────────────────────────────
+                          if (forms.isEmpty)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Column(children: [
+                                  Icon(Icons.assignment_outlined,
+                                      size: 64,
+                                      color:
+                                          AppColors.textLight.withOpacity(0.5)),
+                                  const SizedBox(height: 16),
+                                  const Text('No SSM form yet',
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 16)),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                      'Create your first form for this academic year',
+                                      style: TextStyle(
+                                          color: AppColors.textLight,
+                                          fontSize: 13),
+                                      textAlign: TextAlign.center),
+                                ]),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (ctx, i) => _FormCard(form: forms[i]),
+                                  childCount: forms.length,
+                                ),
+                              ),
+                            ),
+
+                          const SliverToBoxAdapter(
+                              child: SizedBox(height: 100)),
+                        ],
+                      ),
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createForm,
         backgroundColor: AppColors.accent,
@@ -189,7 +224,8 @@ class _FormCard extends StatelessWidget {
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               const Icon(Icons.assignment_rounded,
                   color: AppColors.primary, size: 22),

@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _pwdController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePwd = true;
+  bool _isStudent = true; // toggle student vs staff login
 
   @override
   void dispose() {
@@ -31,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await auth.login(
       _regController.text.trim(),
       _pwdController.text,
+      isStudent: _isStudent,
     );
     // Navigation handled by GoRouter redirect on role change
     if (!success && mounted) {
@@ -80,9 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 6),
                   const Text(
                     'Student Success Matrix',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15),
+                    style: TextStyle(color: Colors.white70, fontSize: 15),
                   ),
                 ],
               ),
@@ -115,14 +115,71 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: AppColors.textSecondary, fontSize: 13)),
                     const SizedBox(height: 24),
 
-                    // Register number
+                    // Login type toggle
+                    Row(children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _isStudent = true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color:
+                                  _isStudent ? AppColors.primary : Colors.white,
+                              borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(10)),
+                              border: Border.all(color: AppColors.primary),
+                            ),
+                            child: Text('Student',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: _isStudent
+                                        ? Colors.white
+                                        : AppColors.primary,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _isStudent = false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: !_isStudent
+                                  ? AppColors.primary
+                                  : Colors.white,
+                              borderRadius: const BorderRadius.horizontal(
+                                  right: Radius.circular(10)),
+                              border: Border.all(color: AppColors.primary),
+                            ),
+                            child: Text('Staff / Admin',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: !_isStudent
+                                        ? Colors.white
+                                        : AppColors.primary,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ),
+                    ]),
+                    const SizedBox(height: 16),
+
+                    // Register number (student) or email (staff)
                     TextFormField(
                       controller: _regController,
-                      decoration: const InputDecoration(
-                        labelText: 'Register Number',
-                        prefixIcon: Icon(Icons.badge_outlined),
+                      decoration: InputDecoration(
+                        labelText: _isStudent ? 'Register Number' : 'Email',
+                        prefixIcon: Icon(_isStudent
+                            ? Icons.badge_outlined
+                            : Icons.email_outlined),
                       ),
-                      textCapitalization: TextCapitalization.characters,
+                      textCapitalization: _isStudent
+                          ? TextCapitalization.characters
+                          : TextCapitalization.none,
+                      keyboardType: _isStudent
+                          ? TextInputType.text
+                          : TextInputType.emailAddress,
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,
                     ),
@@ -143,8 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               setState(() => _obscurePwd = !_obscurePwd),
                         ),
                       ),
-                      validator: (v) =>
-                          (v == null || v.length < 8) ? 'Min 8 characters' : null,
+                      validator: (v) => (v == null || v.length < 8)
+                          ? 'Min 8 characters'
+                          : null,
                     ),
                     const SizedBox(height: 8),
 
@@ -173,8 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Center(
                       child: Text(
                         'Contact admin if you need access',
-                        style: TextStyle(
-                            color: AppColors.textLight, fontSize: 12),
+                        style:
+                            TextStyle(color: AppColors.textLight, fontSize: 12),
                       ),
                     ),
                   ],

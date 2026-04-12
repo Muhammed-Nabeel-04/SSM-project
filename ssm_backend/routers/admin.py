@@ -37,6 +37,13 @@ def list_departments(db: Session = Depends(get_db), _: User = Depends(require_ad
     return [{"id": d.id, "name": d.name, "code": d.code} for d in depts]
 
 
+@router.get("/departments/count")
+def department_count(db: Session = Depends(get_db), _: User = Depends(require_admin)):
+    """Used by app to decide whether to show first-login setup screen."""
+    count = db.query(Department).count()
+    return {"count": count}
+
+
 @router.delete("/departments/{dept_id}")
 def delete_department(
     dept_id: int,
@@ -61,21 +68,18 @@ def delete_department(
 
 @router.get("/users")
 def list_users(
-    role:          Optional[str] = None,
-    department_id: Optional[int] = None,
+    role:          Optional[str]  = None,
+    department_id: Optional[int]  = None,
     is_active:     Optional[bool] = None,
-    limit:         int = Query(50,  ge=1, le=200),   # ← pagination
-    offset:        int = Query(0,   ge=0),
+    limit:  int = Query(50, ge=1, le=200),
+    offset: int = Query(0,  ge=0),
     db: Session = Depends(get_db),
     _:  User    = Depends(require_admin),
 ):
     query = db.query(User)
-    if role:
-        query = query.filter(User.role == role)
-    if department_id:
-        query = query.filter(User.department_id == department_id)
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
+    if role:          query = query.filter(User.role == role)
+    if department_id: query = query.filter(User.department_id == department_id)
+    if is_active is not None: query = query.filter(User.is_active == is_active)
 
     total = query.count()
     users = query.offset(offset).limit(limit).all()
@@ -86,15 +90,45 @@ def list_users(
         "limit":  limit,
         "items": [
             {
-                "id": u.id, "register_number": u.register_number, "name": u.name,
-                "email": u.email, "role": u.role, "department_id": u.department_id,
-                "mentor_id": u.mentor_id, "is_active": u.is_active,
-                "phone": u.phone, "semester": u.semester,
-                "batch": u.batch, "section": u.section,
+                "id":              u.id,
+                "register_number": u.register_number,
+                "name":            u.name,
+                "email":           u.email,
+                "role":            u.role,
+                "department_id":   u.department_id,
+                "department_name": u.department.name if u.department else None,
+                "mentor_id":       u.mentor_id,
+                "mentor_name":     u.mentor.name if u.mentor else None,
+                "is_active":       u.is_active,
+                "phone":           u.phone,
+                "semester":        u.semester,
+                "batch":           u.batch,
+                "section":         u.section,
             }
             for u in users
         ],
     }
+
+
+@router.get("/mentors")
+def list_mentors(
+    department_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    _:  User    = Depends(require_admin),
+):
+    """Returns all active mentors — used to populate mentor dropdown."""
+    query = db.query(User).filter(
+        User.role == UserRole.MENTOR,
+        User.is_active == True,
+    )
+    if department_id:
+        query = query.filter(User.department_id == department_id)
+    mentors = query.all()
+    return [
+        {"id": m.id, "name": m.name, "register_number": m.register_number,
+         "department_id": m.department_id}
+        for m in mentors
+    ]
 
 
 @router.put("/users/{user_id}/toggle-active")
@@ -118,10 +152,12 @@ def assign_mentor(
     db: Session = Depends(get_db),
     _:  User    = Depends(require_admin),
 ):
-    student = db.query(User).filter(User.id == user_id, User.role == UserRole.STUDENT).first()
+    student = db.query(User).filter(
+        User.id == user_id, User.role == UserRole.STUDENT).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    mentor = db.query(User).filter(User.id == mentor_id, User.role == UserRole.MENTOR).first()
+    mentor = db.query(User).filter(
+        User.id == mentor_id, User.role == UserRole.MENTOR).first()
     if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
 
@@ -130,7 +166,6 @@ def assign_mentor(
         SSMForm.student_id == user_id,
         SSMForm.status.in_([FormStatus.DRAFT, FormStatus.SUBMITTED])
     ).update({"mentor_id": mentor_id})
-
     db.commit()
     return {"message": f"Mentor {mentor.name} assigned to {student.name}"}
 
@@ -139,91 +174,124 @@ def assign_mentor(
 
 @router.post("/users/import")
 async def bulk_import_users(
-    file: UploadFile = File(..., description="CSV file"),
+    file: UploadFile = File(...),
     db:   Session    = Depends(get_db),
     _:    User       = Depends(require_admin),
 ):
     """
-    Bulk-create users from a CSV file.
+    CSV columns (header required):
+      register_number, name, email, role, phone,
+      department_name, mentor_register_number (students only)
 
-    Expected CSV columns (header row required):
-        register_number, name, email, password, role,
-        department_id (optional), mentor_id (optional)
-
+    password column NOT needed — defaults to phone number.
     role values: student | mentor | hod | admin
-
-    Returns a summary of created, skipped (duplicate), and failed rows.
     """
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are accepted")
 
     contents = await file.read()
     try:
-        text = contents.decode("utf-8-sig")   # handles BOM from Excel exports
+        text = contents.decode("utf-8-sig")
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="CSV must be UTF-8 encoded")
 
     reader = csv.DictReader(io.StringIO(text))
 
-    required_cols = {"register_number", "name", "email", "password", "role"}
+    required_cols = {"register_number", "name", "email", "role", "phone"}
     if not required_cols.issubset(set(reader.fieldnames or [])):
         missing = required_cols - set(reader.fieldnames or [])
-        raise HTTPException(status_code=400, detail=f"Missing CSV columns: {missing}")
+        raise HTTPException(status_code=400,
+                            detail=f"Missing CSV columns: {missing}")
 
-    created  = []
-    skipped  = []
-    failed   = []
+    # Pre-load all departments and mentors for fast lookup
+    dept_map    = {d.name.lower(): d.id
+                   for d in db.query(Department).all()}
+    mentor_map  = {u.register_number: u.id
+                   for u in db.query(User).filter(
+                       User.role == UserRole.MENTOR).all()}
 
-    for row_num, row in enumerate(reader, start=2):   # start=2 (row 1 = header)
-        reg  = row.get("register_number", "").strip()
-        name = row.get("name", "").strip()
-        email= row.get("email", "").strip()
-        pwd  = row.get("password", "").strip()
-        role_str = row.get("role", "").strip().lower()
+    created, skipped, failed = [], [], []
 
-        # ── Validate ──────────────────────────────────────────────────────────
-        if not all([reg, name, email, pwd, role_str]):
-            failed.append({"row": row_num, "reason": "Missing required field", "register_number": reg})
+    for row_num, row in enumerate(reader, start=2):
+        reg      = row.get("register_number", "").strip()
+        name     = row.get("name",            "").strip()
+        email    = row.get("email",           "").strip()
+        phone    = row.get("phone",           "").strip()
+        role_str = row.get("role",            "").strip().lower()
+        dept_name= row.get("department_name", "").strip()
+        mentor_rn= row.get("mentor_register_number", "").strip()
+
+        # ── Validate required ─────────────────────────────────────────────
+        if not all([reg, name, email, role_str, phone]):
+            failed.append({"row": row_num, "register_number": reg,
+                           "reason": "Missing required field (register_number/name/email/role/phone)"})
             continue
 
-        if len(pwd) < 8:
-            failed.append({"row": row_num, "reason": "Password < 8 chars", "register_number": reg})
+        if len(phone) < 8:
+            failed.append({"row": row_num, "register_number": reg,
+                           "reason": "Phone must be at least 8 digits (used as default password)"})
             continue
 
         try:
             role = UserRole(role_str)
         except ValueError:
-            failed.append({"row": row_num, "reason": f"Invalid role '{role_str}'", "register_number": reg})
+            failed.append({"row": row_num, "register_number": reg,
+                           "reason": f"Invalid role '{role_str}'"})
             continue
 
-        dept_id   = int(row["department_id"]) if row.get("department_id", "").strip() else None
-        mentor_id = int(row["mentor_id"])     if row.get("mentor_id",     "").strip() else None
+        # ── Resolve department ─────────────────────────────────────────────
+        dept_id = None
+        if dept_name:
+            dept_id = dept_map.get(dept_name.lower())
+            if dept_id is None:
+                failed.append({"row": row_num, "register_number": reg,
+                               "reason": f"Department '{dept_name}' not found"})
+                continue
+        elif role != UserRole.ADMIN:
+            failed.append({"row": row_num, "register_number": reg,
+                           "reason": "department_name required for non-admin users"})
+            continue
 
-        # ── Duplicate check ───────────────────────────────────────────────────
+        # ── Resolve mentor (students only) ─────────────────────────────────
+        mentor_id = None
+        if role == UserRole.STUDENT:
+            if not mentor_rn:
+                failed.append({"row": row_num, "register_number": reg,
+                               "reason": "mentor_register_number required for students"})
+                continue
+            mentor_id = mentor_map.get(mentor_rn)
+            if mentor_id is None:
+                failed.append({"row": row_num, "register_number": reg,
+                               "reason": f"Mentor '{mentor_rn}' not found — import mentors first"})
+                continue
+
+        # ── Duplicate check ────────────────────────────────────────────────
         existing = db.query(User).filter(
             (User.register_number == reg) | (User.email == email)
         ).first()
         if existing:
-            skipped.append({"row": row_num, "register_number": reg, "reason": "Already exists"})
+            skipped.append({"row": row_num, "register_number": reg,
+                            "reason": "Already exists"})
             continue
 
-        # ── Create ────────────────────────────────────────────────────────────
+        # ── Create ────────────────────────────────────────────────────────
         try:
             user = User(
                 register_number = reg,
                 name            = name,
                 email           = email,
-                password_hash   = hash_password(pwd),
+                password_hash   = hash_password(phone),   # phone = default password
                 role            = role,
+                phone           = phone,
                 department_id   = dept_id,
                 mentor_id       = mentor_id,
             )
             db.add(user)
-            db.flush()   # get ID without committing — rolls back on error
+            db.flush()
             created.append({"row": row_num, "register_number": reg, "name": name})
         except Exception as e:
             db.rollback()
-            failed.append({"row": row_num, "reason": str(e), "register_number": reg})
+            failed.append({"row": row_num, "register_number": reg, "reason": str(e)})
             continue
 
     db.commit()
@@ -252,10 +320,10 @@ def analytics_overview(
     query = db.query(SSMForm)
     if academic_year:
         query = query.filter(SSMForm.academic_year == academic_year)
-    forms = query.all()
-
+    forms    = query.all()
     approved = [f for f in forms if f.status == FormStatus.APPROVED]
-    scores   = [f.calculated_score.grand_total for f in approved if f.calculated_score]
+    scores   = [f.calculated_score.grand_total
+                for f in approved if f.calculated_score]
 
     star_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
     for f in approved:
@@ -278,7 +346,7 @@ def analytics_overview(
 
 @router.get("/analytics/top-students")
 def top_students(
-    limit:         int = Query(10, ge=1, le=100),    # ← pagination
+    limit:         int = Query(10, ge=1, le=100),
     offset:        int = Query(0,  ge=0),
     academic_year: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -288,15 +356,13 @@ def top_students(
     if academic_year:
         query = query.filter(SSMForm.academic_year == academic_year)
 
-    forms = query.all()
-    forms_with_scores = sorted(
-        [f for f in forms if f.calculated_score],
+    forms = sorted(
+        [f for f in query.all() if f.calculated_score],
         key=lambda f: f.calculated_score.grand_total,
         reverse=True,
     )
-
-    total = len(forms_with_scores)
-    page  = forms_with_scores[offset: offset + limit]
+    total = len(forms)
+    page  = forms[offset: offset + limit]
 
     return {
         "total":  total,

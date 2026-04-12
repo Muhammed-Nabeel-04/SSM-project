@@ -43,7 +43,8 @@ def hod_dashboard(
 
     pending = db.query(SSMForm).filter(
         SSMForm.student_id.in_(student_ids),
-        SSMForm.status == FormStatus.HOD_REVIEW
+        SSMForm.status.in_([FormStatus.HOD_REVIEW, FormStatus.SUBMITTED,
+                             FormStatus.MENTOR_REVIEW])
     ).all()
 
     approved = db.query(SSMForm).filter(
@@ -67,6 +68,14 @@ def hod_dashboard(
         ],
         "approved_count": len(approved),
         "total_students": len(student_ids),
+        "mentors_count": db.query(User).filter(
+            User.department_id == current_user.department_id,
+            User.role == "mentor"
+        ).count(),
+        "students_count": db.query(User).filter(
+            User.department_id == current_user.department_id,
+            User.role == "student"
+        ).count(),
     }
 
 

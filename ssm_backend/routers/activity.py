@@ -159,13 +159,13 @@ def _patch_form_data(activity: StudentActivity, db: Session):
 
     # ── Development ───────────────────────────────────────────────────────────
     elif atype == ActivityType.NPTEL:
-        # Best tier wins
         tier_order = ["participated", "completed", "elite", "elite_plus"]
         current = form.development.nptel_tier
         new_tier = activity.nptel_tier
-        if new_tier:
-            c_idx = tier_order.index(current.value) if current else -1
-            n_idx = tier_order.index(new_tier) if new_tier in tier_order else -1
+        if new_tier and new_tier in tier_order:
+            c_val = current.value if current else ""
+            c_idx = tier_order.index(c_val) if c_val in tier_order else -1
+            n_idx = tier_order.index(new_tier)
             if n_idx > c_idx:
                 form.development.nptel_tier = new_tier
 
@@ -173,24 +173,24 @@ def _patch_form_data(activity: StudentActivity, db: Session):
         form.development.online_cert_count = (form.development.online_cert_count or 0) + 1
 
     elif atype == ActivityType.INTERNSHIP:
-        # Longest duration wins
         dur_order = ["participation", "1to2weeks", "2to4weeks", "4weeks_plus"]
         current = form.development.internship_duration
         new_dur = activity.internship_duration
-        if new_dur:
-            c_idx = dur_order.index(current.value) if current else -1
-            n_idx = dur_order.index(new_dur) if new_dur in dur_order else -1
+        if new_dur and new_dur in dur_order:
+            c_val = current.value if current else ""
+            c_idx = dur_order.index(c_val) if c_val in dur_order else -1
+            n_idx = dur_order.index(new_dur)
             if n_idx > c_idx:
                 form.development.internship_duration = new_dur
 
     elif atype == ActivityType.COMPETITION:
-        # Best result wins
         res_order = ["participated", "finalist", "winner"]
         current = form.development.competition_result
         new_res = activity.competition_result
-        if new_res:
-            c_idx = res_order.index(current.value) if current else -1
-            n_idx = res_order.index(new_res) if new_res in res_order else -1
+        if new_res and new_res in res_order:
+            c_val = current.value if current else ""
+            c_idx = res_order.index(c_val) if c_val in res_order else -1
+            n_idx = res_order.index(new_res)
             if n_idx > c_idx:
                 form.development.competition_result = new_res
 
@@ -198,9 +198,10 @@ def _patch_form_data(activity: StudentActivity, db: Session):
         pub_order = ["prototype", "conference", "patent"]
         current = form.development.publication_type
         new_pub = activity.publication_type
-        if new_pub:
-            c_idx = pub_order.index(current.value) if current else -1
-            n_idx = pub_order.index(new_pub) if new_pub in pub_order else -1
+        if new_pub and new_pub in pub_order:
+            c_val = current.value if current else ""
+            c_idx = pub_order.index(c_val) if c_val in pub_order else -1
+            n_idx = pub_order.index(new_pub)
             if n_idx > c_idx:
                 form.development.publication_type = new_pub
 
@@ -229,9 +230,10 @@ def _patch_form_data(activity: StudentActivity, db: Session):
         role_order = ["class_level", "dept_level", "college_level"]
         current = form.leadership.formal_role
         new_role = activity.role_level
-        if new_role:
-            c_idx = role_order.index(current.value) if current else -1
-            n_idx = role_order.index(new_role) if new_role in role_order else -1
+        if new_role and new_role in role_order:
+            c_val = current.value if current else ""
+            c_idx = role_order.index(c_val) if c_val in role_order else -1
+            n_idx = role_order.index(new_role)
             if n_idx > c_idx:
                 form.leadership.formal_role = new_role
 

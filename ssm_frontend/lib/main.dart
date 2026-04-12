@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'widgets/offline_wrapper.dart';
 
 import 'config/constants.dart';
 import 'router.dart' show buildRouter;
@@ -8,6 +9,7 @@ import 'services/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  setupCrashHandlers();
   runApp(const SSMApp());
 }
 
