@@ -7,6 +7,8 @@ from database import create_tables
 from routers import auth, student, mentor, hod, admin
 from routers.files import router as files_router   # ← secure file serving
 from routers.activity import router as activity_router
+from routers.settings  import router as settings_router
+from routers import settings
 
 app = FastAPI(
     title   = settings.APP_NAME,
@@ -36,6 +38,8 @@ app.include_router(hod.router)
 app.include_router(admin.router)
 app.include_router(files_router)   # ← replaces app.mount("/uploads", ...)
 app.include_router(activity_router)
+app.include_router(settings_router)
+app.include_router(settings.router)
 
 # ─── STARTUP ──────────────────────────────────────────────────────────────────
 

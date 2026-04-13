@@ -4,4 +4,5 @@ from .ssm import (
     DisciplineData, LeadershipData, CalculatedScore, FormStatus
 )
 from .document import UploadedDocument, VerificationStatus, DocumentCategory
-from models.activity import StudentActivity  # noqa: F401
+from models.activity import StudentActivity   # noqa: F401
+from models.settings import SystemSettings    # noqa: F401

@@ -447,4 +447,29 @@ class ApiService {
     final list = _handle(res) as List;
     return list.cast<Map<String, dynamic>>();
   }
+
+  static Future<Map<String, dynamic>> getSystemSettings() async {
+    final res = await http.get(_url('/settings/current'),
+        headers: await _authHeaders());
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> updateSystemSettings({
+    String? academicYear,
+    int? currentSemester,
+  }) async {
+    final params = <String, String>{};
+    if (academicYear != null) params['academic_year'] = academicYear;
+    if (currentSemester != null)
+      params['current_semester'] = currentSemester.toString();
+    final res = await http.put(_url('/settings/update', params),
+        headers: await _authHeaders());
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> promoteStudents() async {
+    final res = await http.post(_url('/settings/promote'),
+        headers: await _authHeaders());
+    return _handle(res);
+  }
 }

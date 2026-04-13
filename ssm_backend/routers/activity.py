@@ -45,8 +45,10 @@ MAX_FILE_MB = 5
 
 def _get_or_create_form(student: User, db: Session) -> SSMForm:
     """Get current academic year form, auto-create if it doesn't exist."""
-    from config import settings as s
-    academic_year = "2025-2026"   # TODO: derive from settings or current date
+    from models.settings import SystemSettings
+    from routers.settings import get_or_create_settings
+    sys_settings  = get_or_create_settings(db)
+    academic_year = sys_settings.academic_year
 
     form = db.query(SSMForm).filter(
         SSMForm.student_id == student.id,

@@ -49,7 +49,7 @@ class AppColors {
 
 class AppStrings {
   static const appName = 'SSM System';
-  static const academicYear = '2025-2026';
+  static String academicYear = '2025-2026'; // updated on app start from backend
 
   // Categories
   static const cat1 = 'Academic Performance';

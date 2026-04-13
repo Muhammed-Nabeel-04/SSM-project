@@ -75,15 +75,15 @@ def score_academic(data: AcademicData) -> dict:
 
     # 1.7 Academic Consistency Index (max 15)
     # Compare internal GPA vs university GPA — measures consistency
-    if data.internal_gpa and data.university_gpa and data.internal_gpa > 0:
+    if data.internal_gpa and data.university_gpa:
         diff = abs(data.internal_gpa - data.university_gpa)
-        # Convert difference to consistency percentage
-        consistency = max(0, 100 - (diff / data.internal_gpa * 100))
-        if consistency >= 95:
+        # Consistency = how close internal and university GPA are
+        # diff ≤ 0.5 → ≥95%, diff ≤ 1.0 → ≥90%, diff ≤ 1.5 → ≥85%
+        if diff <= 0.5:
             breakdown["1.7_consistency"] = 15
-        elif consistency >= 90:
+        elif diff <= 1.0:
             breakdown["1.7_consistency"] = 10
-        elif consistency >= 85:
+        elif diff <= 1.5:
             breakdown["1.7_consistency"] = 5
         else:
             breakdown["1.7_consistency"] = 0

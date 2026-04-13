@@ -28,6 +28,7 @@ import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/admin_users_screen.dart';
 import 'screens/admin/admin_create_user_screen.dart';
 import 'screens/admin/admin_import_screen.dart';
+import 'screens/admin/admin_settings_screen.dart';
 
 // Shared
 import 'screens/shared/profile_screen.dart';
@@ -59,6 +60,19 @@ GoRouter buildRouter(AuthProvider authProvider) {
       if (auth.state == AuthState.unknown) {
         return isSplash ? null : '/splash';
       }
+
+      // Coming from splash — redirect to correct destination
+      if (isSplash) {
+        if (auth.state == AuthState.unauthenticated) return '/login';
+        return switch (auth.role) {
+          'student' => '/student/dashboard',
+          'mentor' => '/mentor/dashboard',
+          'hod' => '/hod/dashboard',
+          'admin' => '/admin/dashboard',
+          _ => '/login',
+        };
+      }
+
       final isLoginPage = state.matchedLocation == '/login';
 
       if (auth.state == AuthState.unauthenticated) {
@@ -189,6 +203,10 @@ GoRouter buildRouter(AuthProvider authProvider) {
       GoRoute(
         path: '/admin/import',
         builder: (c, s) => const AdminImportScreen(),
+      ),
+      GoRoute(
+        path: '/admin/settings',
+        builder: (c, s) => const AdminSettingsScreen(),
       ),
     ],
   );

@@ -71,6 +71,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             onPressed: () => context.push('/setup'),
           ),
           IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Academic Settings',
+            onPressed: () => context.push('/admin/settings'),
+          ),
+          IconButton(
             icon: const Icon(Icons.manage_accounts_rounded),
             tooltip: 'User Management',
             onPressed: () => context.push('/admin/users'),

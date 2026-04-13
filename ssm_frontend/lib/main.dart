@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'widgets/offline_wrapper.dart';
 
 import 'config/constants.dart';
 import 'router.dart' show buildRouter;
 import 'services/auth_provider.dart';
+import 'services/api_service.dart';
+import 'widgets/offline_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Placeholder for your crash handler logic
   setupCrashHandlers();
   runApp(const SSMApp());
+}
+
+// Function to handle global errors (ensure this is defined in your project)
+void setupCrashHandlers() {
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+  };
 }
 
 class SSMApp extends StatelessWidget {
@@ -20,7 +29,20 @@ class SSMApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()..checkSession()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final auth = AuthProvider()..checkSession();
+
+            // Fetch system settings to sync academic year globally
+            ApiService.getSystemSettings().then((data) {
+              if (data != null && data['academic_year'] != null) {
+                AppStrings.academicYear = data['academic_year'];
+              }
+            }).catchError((_) {});
+
+            return auth;
+          },
+        ),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) => MaterialApp.router(

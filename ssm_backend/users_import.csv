@@ -1,3 +1,5 @@
-register_number,name,email,role,phone,department_name,mentor_register_number
-M001,Dr. Smith,smith@college.edu,mentor,9876543210,Computer Science,
-711521CS001,John,john@college.edu,student,9876543211,Computer Science,M001
+# register_number,name,email,role,phone,department_name,mentor_register_number,semester,year_of_study,batch,section
+# M001,Dr. Smith,smith@college.edu,mentor,9876543210,Computer Science,,,,,
+# 711521CS001,John,john@college.edu,student,9876543211,Computer Science,M001,3,2,2022-2026,A
+#
+# semester/year_of_study/batch/section are optional — blank = not set

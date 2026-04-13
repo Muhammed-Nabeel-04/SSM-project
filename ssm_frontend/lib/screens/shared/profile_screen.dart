@@ -106,17 +106,31 @@ class _DetailsTabState extends State<_DetailsTab> {
   void initState() {
     super.initState();
     _prefill();
+    // If profile not loaded yet, fetch it and prefill when ready
+    if (widget.profile == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final data = await ApiService.getMe();
+          if (mounted) _prefillFromMap(data);
+        } catch (_) {}
+      });
+    }
   }
 
   @override
   void didUpdateWidget(_DetailsTab old) {
     super.didUpdateWidget(old);
-    if (old.profile != widget.profile) _prefill();
+    if (old.profile != widget.profile && widget.profile != null) {
+      _prefill();
+    }
   }
 
   void _prefill() {
-    final p = widget.profile;
-    if (p == null) return;
+    if (widget.profile == null) return;
+    _prefillFromMap(widget.profile!);
+  }
+
+  void _prefillFromMap(Map<String, dynamic> p) {
     _phoneCtrl.text = p['phone'] ?? '';
     _emailCtrl.text = p['email'] ?? '';
     _semCtrl.text = (p['semester'] ?? '').toString().replaceAll('null', '');
@@ -148,16 +162,6 @@ class _DetailsTabState extends State<_DetailsTab> {
         payload['phone'] = _phoneCtrl.text.trim();
       if (_emailCtrl.text.trim().isNotEmpty)
         payload['email'] = _emailCtrl.text.trim();
-      if (widget.role == 'student') {
-        if (_semCtrl.text.trim().isNotEmpty)
-          payload['semester'] = int.tryParse(_semCtrl.text.trim());
-        if (_batchCtrl.text.trim().isNotEmpty)
-          payload['batch'] = _batchCtrl.text.trim();
-        if (_yearCtrl.text.trim().isNotEmpty)
-          payload['year_of_study'] = int.tryParse(_yearCtrl.text.trim());
-        if (_sectionCtrl.text.trim().isNotEmpty)
-          payload['section'] = _sectionCtrl.text.trim();
-      }
 
       await ApiService.updateProfile(payload);
       context.read<AuthProvider>().updateProfileLocally(payload);
@@ -231,17 +235,30 @@ class _DetailsTabState extends State<_DetailsTab> {
         _field('Phone Number', _phoneCtrl, Icons.phone_outlined,
             keyboard: TextInputType.phone),
 
-        // Student-only read-only academic info (set by admin)
+        // Student-only fields — academic info is read-only (set by admin)
         if (widget.role == 'student') ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _SectionLabel('Academic Info (set by admin)'),
           _ReadOnlyField(
-              'Batch', p?['batch'] ?? '—', Icons.calendar_today_rounded),
-          _ReadOnlyField('Semester', p?['semester']?.toString() ?? '—',
-              Icons.numbers_rounded),
-          _ReadOnlyField('Year of Study',
-              p?['year_of_study']?.toString() ?? '—', Icons.school_rounded),
-          _ReadOnlyField('Section', p?['section'] ?? '—', Icons.group_rounded),
+            'Semester',
+            _semCtrl.text.isEmpty ? 'Not set' : 'Semester ${_semCtrl.text}',
+            Icons.numbers_rounded,
+          ),
+          _ReadOnlyField(
+            'Year of Study',
+            _yearCtrl.text.isEmpty ? 'Not set' : 'Year ${_yearCtrl.text}',
+            Icons.school_rounded,
+          ),
+          _ReadOnlyField(
+            'Batch',
+            _batchCtrl.text.isEmpty ? 'Not set' : _batchCtrl.text,
+            Icons.calendar_today_rounded,
+          ),
+          _ReadOnlyField(
+            'Section',
+            _sectionCtrl.text.isEmpty ? 'Not set' : _sectionCtrl.text,
+            Icons.group_rounded,
+          ),
         ],
 
         const SizedBox(height: 16),

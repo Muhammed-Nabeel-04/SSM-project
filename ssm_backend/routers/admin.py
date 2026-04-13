@@ -198,6 +198,8 @@ async def bulk_import_users(
     reader = csv.DictReader(io.StringIO(text))
 
     required_cols = {"register_number", "name", "email", "role", "phone"}
+    # Optional columns: department_name, mentor_register_number,
+    #                   semester, year_of_study, batch, section
     if not required_cols.issubset(set(reader.fieldnames or [])):
         missing = required_cols - set(reader.fieldnames or [])
         raise HTTPException(status_code=400,
@@ -276,15 +278,24 @@ async def bulk_import_users(
 
         # ── Create ────────────────────────────────────────────────────────
         try:
+            semester      = int(row.get("semester",      "").strip()) if row.get("semester",      "").strip().isdigit() else None
+            year_of_study = int(row.get("year_of_study", "").strip()) if row.get("year_of_study", "").strip().isdigit() else None
+            batch         = row.get("batch",   "").strip() or None
+            section       = row.get("section", "").strip() or None
+
             user = User(
                 register_number = reg,
                 name            = name,
                 email           = email,
-                password_hash   = hash_password(phone),   # phone = default password
+                password_hash   = hash_password(phone),
                 role            = role,
                 phone           = phone,
                 department_id   = dept_id,
                 mentor_id       = mentor_id,
+                semester        = semester,
+                year_of_study   = year_of_study,
+                batch           = batch,
+                section         = section,
             )
             db.add(user)
             db.flush()
