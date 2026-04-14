@@ -333,6 +333,20 @@ async def submit_activity(
 
         if size_kb > MAX_FILE_MB * 1024:
             raise HTTPException(status_code=400, detail=f"File too large. Max {MAX_FILE_MB} MB.")
+        
+        # ── Per-user storage cap (50 MB total) ───────────────────────────
+        user_upload_dir = os.path.join(settings.UPLOAD_DIR, str(current_user.id))
+        if os.path.exists(user_upload_dir):
+            total_kb = sum(
+                os.path.getsize(os.path.join(dirpath, f)) // 1024
+                for dirpath, _, files in os.walk(user_upload_dir)
+                for f in files
+            )
+            if total_kb > 50 * 1024:  # 50 MB cap per student
+                raise HTTPException(
+                    status_code=400,
+                    detail="Storage limit reached (50 MB). Delete old activities to upload more."
+                )
 
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in {".pdf", ".jpg", ".jpeg", ".png"}:

@@ -6,9 +6,9 @@ import os
 class Settings(BaseSettings):
     # Database
     DB_HOST: str = "localhost"
-    DB_PORT: int = 3306
+    DB_PORT: int = 5432
     DB_NAME: str = "ssm_db"
-    DB_USER: str = "root"
+    DB_USER: str = "ssm_user"
     DB_PASSWORD: str = ""
 
     # JWT
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        return "sqlite:///./ssm.db"
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def origins_list(self) -> list[str]:

@@ -34,10 +34,11 @@ class User(Base):
     name            = Column(String(100), nullable=False)
     email           = Column(String(150), unique=True, nullable=False)
     password_hash   = Column(String(255), nullable=False)
-    role            = Column(SAEnum(UserRole), nullable=False)
+    role = Column(SAEnum(UserRole, native_enum=False), nullable=False)
     department_id   = Column(Integer, ForeignKey("departments.id", ondelete="RESTRICT"), nullable=True)
     mentor_id       = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_active       = Column(Boolean, default=True)
+    must_change_password = Column(Boolean, default=False)
     created_at      = Column(DateTime, default=datetime.utcnow)
     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

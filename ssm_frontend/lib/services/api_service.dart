@@ -352,7 +352,8 @@ class ApiService {
     return _handle(res);
   }
 
-  static Future<List<dynamic>> getTopStudents([String? academicYear]) async {
+  static Future<Map<String, dynamic>> getTopStudents(
+      [String? academicYear]) async {
     final params =
         academicYear != null ? {'academic_year': academicYear} : null;
     final res = await http.get(_url('/admin/analytics/top-students', params),

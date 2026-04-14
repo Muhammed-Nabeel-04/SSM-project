@@ -284,19 +284,20 @@ async def bulk_import_users(
             section       = row.get("section", "").strip() or None
 
             user = User(
-                register_number = reg,
-                name            = name,
-                email           = email,
-                password_hash   = hash_password(phone),
-                role            = role,
-                phone           = phone,
-                department_id   = dept_id,
-                mentor_id       = mentor_id,
-                semester        = semester,
-                year_of_study   = year_of_study,
-                batch           = batch,
-                section         = section,
-            )
+    register_number      = reg,
+    name                 = name,
+    email                = email,
+    password_hash        = hash_password(phone),
+    role                 = role,
+    phone                = phone,
+    department_id        = dept_id,
+    mentor_id            = mentor_id,
+    semester             = semester,
+    year_of_study        = year_of_study,
+    batch                = batch,
+    section              = section,
+    must_change_password = True,   # ← force change on first login
+)
             db.add(user)
             db.flush()
             created.append({"row": row_num, "register_number": reg, "name": name})

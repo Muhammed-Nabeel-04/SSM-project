@@ -140,7 +140,7 @@ class SSMForm(Base):
     mentor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     hod_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     academic_year = Column(String(9), nullable=False)  # e.g. "2025-2026"
-    status = Column(SAEnum(FormStatus), default=FormStatus.DRAFT)
+    status = Column(SAEnum(FormStatus, native_enum=False), default=FormStatus.DRAFT)
     mentor_remarks = Column(Text, nullable=True)
     hod_remarks = Column(Text, nullable=True)
     rejection_reason = Column(Text, nullable=True)
@@ -173,13 +173,13 @@ class AcademicData(Base):
     university_gpa = Column(Float, nullable=True)
     has_arrear = Column(Boolean, default=False)
     attendance_pct = Column(Float, nullable=True)
-    project_status = Column(SAEnum(ProjectStatus), default=ProjectStatus.NONE)
+    project_status = Column(SAEnum(ProjectStatus, native_enum=False), default=ProjectStatus.NONE)
 
     # Mentor fills
-    mentor_feedback = Column(SAEnum(FeedbackLevel), nullable=True)
+    mentor_feedback = Column(SAEnum(FeedbackLevel, native_enum=False), nullable=True)
 
     # HOD fills
-    hod_feedback = Column(SAEnum(FeedbackLevel), nullable=True)
+    hod_feedback = Column(SAEnum(FeedbackLevel, native_enum=False), nullable=True)
 
     form = relationship("SSMForm", back_populates="academic")
 
@@ -193,11 +193,11 @@ class DevelopmentData(Base):
     form_id = Column(Integer, ForeignKey("ssm_forms.id", ondelete="CASCADE"), unique=True)
 
     # Student fills
-    nptel_tier = Column(SAEnum(NPTELTier), default=NPTELTier.NONE)
+    nptel_tier = Column(SAEnum(NPTELTier, native_enum=False), default=NPTELTier.NONE)
     online_cert_count = Column(Integer, default=0)    # count of certs ≥ 20hrs
-    internship_duration = Column(SAEnum(InternshipDuration), default=InternshipDuration.NONE)
-    competition_result = Column(SAEnum(CompetitionResult), default=CompetitionResult.NONE)
-    publication_type = Column(SAEnum(PublicationType), default=PublicationType.NONE)
+    internship_duration = Column(SAEnum(InternshipDuration, native_enum=False), default=InternshipDuration.NONE)
+    competition_result = Column(SAEnum(CompetitionResult, native_enum=False), default=CompetitionResult.NONE)
+    publication_type = Column(SAEnum(PublicationType, native_enum=False), default=PublicationType.NONE)
     professional_programs_count = Column(Integer, default=0)
 
     form = relationship("SSMForm", back_populates="development")
@@ -212,9 +212,9 @@ class SkillData(Base):
     form_id = Column(Integer, ForeignKey("ssm_forms.id", ondelete="CASCADE"), unique=True)
 
     # Mentor rates
-    technical_skill = Column(SAEnum(SkillLevel), nullable=True)
-    soft_skill = Column(SAEnum(FeedbackLevel), nullable=True)
-    team_management = Column(SAEnum(TeamManagement), nullable=True)
+    technical_skill = Column(SAEnum(SkillLevel, native_enum=False), nullable=True)
+    soft_skill = Column(SAEnum(FeedbackLevel, native_enum=False), nullable=True)
+    team_management = Column(SAEnum(TeamManagement, native_enum=False), nullable=True)
 
     # Student fills
     placement_training_pct = Column(Float, default=0.0)
@@ -222,7 +222,7 @@ class SkillData(Base):
     higher_studies = Column(Boolean, default=False)  # GATE / top uni alternative
     industry_interactions = Column(Integer, default=0)
     research_papers_count = Column(Integer, default=0)
-    innovation_level = Column(SAEnum(InnovationLevel), default=InnovationLevel.NONE)
+    innovation_level = Column(SAEnum(InnovationLevel, native_enum=False), default=InnovationLevel.NONE)
 
     form = relationship("SSMForm", back_populates="skill")
 
@@ -236,10 +236,10 @@ class DisciplineData(Base):
     form_id = Column(Integer, ForeignKey("ssm_forms.id", ondelete="CASCADE"), unique=True)
 
     # Mentor / Admin rates
-    discipline_level = Column(SAEnum(DisciplineLevel), default=DisciplineLevel.NO_VIOLATIONS)
-    dress_code_level = Column(SAEnum(DressCodeLevel), default=DressCodeLevel.CONSISTENT)
-    dept_contribution = Column(SAEnum(DeptContribution), default=DeptContribution.NONE)
-    social_media_level = Column(SAEnum(SocialMediaLevel), default=SocialMediaLevel.NONE)
+    discipline_level = Column(SAEnum(DisciplineLevel, native_enum=False), default=DisciplineLevel.NO_VIOLATIONS)
+    dress_code_level = Column(SAEnum(DressCodeLevel, native_enum=False), default=DressCodeLevel.CONSISTENT)
+    dept_contribution = Column(SAEnum(DeptContribution, native_enum=False), default=DeptContribution.NONE)
+    social_media_level = Column(SAEnum(SocialMediaLevel, native_enum=False), default=SocialMediaLevel.NONE)
 
     # Pulled from academic data (same field)
     attendance_pct = Column(Float, default=0.0)
@@ -257,13 +257,13 @@ class LeadershipData(Base):
     form_id = Column(Integer, ForeignKey("ssm_forms.id", ondelete="CASCADE"), unique=True)
 
     # Student fills (mentor confirms)
-    formal_role = Column(SAEnum(LeadershipLevel), default=LeadershipLevel.NONE)
-    event_leadership = Column(SAEnum(EventLeadership), default=EventLeadership.NONE)
-    community_leadership = Column(SAEnum(CommunityLeadership), default=CommunityLeadership.NONE)
+    formal_role = Column(SAEnum(LeadershipLevel, native_enum=False), default=LeadershipLevel.NONE)
+    event_leadership = Column(SAEnum(EventLeadership, native_enum=False), default=EventLeadership.NONE)
+    community_leadership = Column(SAEnum(CommunityLeadership, native_enum=False), default=CommunityLeadership.NONE)
 
     # Mentor rates
-    innovation_initiative = Column(SAEnum(InnovationLevel), default=InnovationLevel.NONE)
-    team_management_leadership = Column(SAEnum(TeamManagement), nullable=True)  # same as skill.team_management
+    innovation_initiative = Column(SAEnum(InnovationLevel, native_enum=False), default=InnovationLevel.NONE)
+    team_management_leadership = Column(SAEnum(TeamManagement, native_enum=False), nullable=True)
 
     form = relationship("SSMForm", back_populates="leadership")
 

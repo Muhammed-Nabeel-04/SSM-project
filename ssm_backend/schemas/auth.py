@@ -20,7 +20,8 @@ class TokenResponse(BaseModel):
     role:          str
     user_id:       int
     name:          str
-    department_id: Optional[int]
+    department_id: Optional[int] = None
+    must_change_password: bool = False
 
 
 class RefreshTokenRequest(BaseModel):  # ← NEW

@@ -19,7 +19,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # ─── LOGIN ────────────────────────────────────────────────────────────────────
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     # Students login with register_number, others with email
     if payload.register_number:
@@ -58,6 +64,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         user_id       = user.id,
         name          = user.name,
         department_id = user.department_id,
+        must_change_password = user.must_change_password,
     )
 
 
@@ -132,7 +139,8 @@ def change_password(
     if not verify_password(payload.old_password, current_user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is incorrect")
 
-    current_user.password_hash = hash_password(payload.new_password)
+    current_user.password_hash        = hash_password(payload.new_password)
+    current_user.must_change_password = False
     db.commit()
     return {"message": "Password changed successfully"}
 
@@ -148,14 +156,15 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Register number or email already exists")
 
     user = User(
-        register_number = payload.register_number,
-        name            = payload.name,
-        email           = payload.email,
-        password_hash   = hash_password(payload.password),
-        role            = payload.role,
-        department_id   = payload.department_id,
-        mentor_id       = payload.mentor_id,
-    )
+    register_number      = payload.register_number,
+    name                 = payload.name,
+    email                = payload.email,
+    password_hash        = hash_password(payload.password),
+    role                 = payload.role,
+    department_id        = payload.department_id,
+    mentor_id            = payload.mentor_id,
+    must_change_password = True,   # ← force change on first login
+)
     db.add(user)
     db.commit()
     db.refresh(user)

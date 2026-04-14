@@ -64,6 +64,8 @@ GoRouter buildRouter(AuthProvider authProvider) {
       // Coming from splash — redirect to correct destination
       if (isSplash) {
         if (auth.state == AuthState.unauthenticated) return '/login';
+        // Force password change before anything else
+        if (auth.mustChangePassword) return '/profile';
         return switch (auth.role) {
           'student' => '/student/dashboard',
           'mentor' => '/mentor/dashboard',

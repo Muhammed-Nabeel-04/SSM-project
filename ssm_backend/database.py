@@ -4,10 +4,11 @@ from config import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,       # reconnect if connection drops
+    pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
     echo=settings.APP_ENV == "development",
+    connect_args={"sslmode": "require"},  # ← required for Supabase
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

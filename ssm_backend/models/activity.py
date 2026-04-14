@@ -69,8 +69,8 @@ class StudentActivity(Base):
     form_id     = Column(Integer, ForeignKey("ssm_forms.id",  ondelete="CASCADE"), nullable=False)
     student_id  = Column(Integer, ForeignKey("users.id",      ondelete="CASCADE"), nullable=False)
 
-    category      = Column(SAEnum(ActivityCategory), nullable=False)
-    activity_type = Column(SAEnum(ActivityType),     nullable=False)
+    category = Column(SAEnum(ActivityCategory, native_enum=False), nullable=False)
+    activity_type = Column(SAEnum(ActivityType, native_enum=False), nullable=False)
 
     # Activity-specific fields stored as individual nullable columns
     # (avoids JSON parsing complexity; each activity uses a subset)
@@ -118,9 +118,9 @@ class StudentActivity(Base):
     ocr_extracted_text= Column(Text,        nullable=True)
 
     # Verification state
-    ocr_status    = Column(SAEnum(OCRStatus),    default=OCRStatus.PENDING,       nullable=False)
+    ocr_status = Column(SAEnum(OCRStatus, native_enum=False), default=OCRStatus.PENDING, nullable=False)
     ocr_note      = Column(Text, nullable=True)
-    mentor_status = Column(SAEnum(MentorStatus), default=MentorStatus.PENDING,    nullable=False)
+    mentor_status = Column(SAEnum(MentorStatus, native_enum=False), default=MentorStatus.PENDING, nullable=False)
     mentor_note   = Column(Text, nullable=True)
 
     submitted_at  = Column(DateTime, default=datetime.utcnow)

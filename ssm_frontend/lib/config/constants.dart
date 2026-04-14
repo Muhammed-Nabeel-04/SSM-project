@@ -61,7 +61,10 @@ class AppStrings {
 
 class AppConfig {
   // Change this to your FastAPI server IP when testing on device
-  static const baseUrl = 'http://10.0.2.2:8000'; // Android emulator → localhost
+  static const baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000',
+  );
 
   static const tokenKey = 'ssm_access_token';
   static const userRoleKey = 'ssm_user_role';

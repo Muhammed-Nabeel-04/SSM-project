@@ -134,7 +134,8 @@ def promote_students(
         else:
             # Promote
             student.semester      = current_sem + 1
-            student.year_of_study = ((current_sem + 1) + 1) // 2   # sem 1-2=yr1, 3-4=yr2 etc.
+            new_sem = current_sem + 1
+            student.year_of_study = (new_sem + 1) // 2  # sem1,2=yr1 sem3,4=yr2 sem5,6=yr3 sem7,8=yr4
 
             promoted.append({
                 "id":              student.id,

@@ -12,6 +12,7 @@ class AuthProvider extends ChangeNotifier {
   int? _deptId;
   String? _errorMessage;
   bool _loading = false;
+  bool mustChangePassword = false;
 
   // Full profile — populated after login via /auth/me
   Map<String, dynamic>? _profile;
@@ -68,6 +69,7 @@ class AuthProvider extends ChangeNotifier {
       _name = data['name'];
       _userId = data['user_id'];
       _deptId = data['department_id'];
+      mustChangePassword = data['must_change_password'] ?? false;
       _state = AuthState.authenticated;
       _loading = false;
       notifyListeners();
