@@ -4,22 +4,25 @@ import os
 
 
 class Settings(BaseSettings):
-    # Database
-    DB_HOST: str = "localhost"
-    DB_PORT: int = 5432
-    DB_NAME: str = "ssm_db"
-    DB_USER: str = "ssm_user"
+    # Database — Railway provides full URL directly
+    DATABASE_URL: str = ""
+
+    # Individual parts (fallback for local dev)
+    DB_HOST    : str = "localhost"
+    DB_PORT    : int = 5432
+    DB_NAME    : str = "ssm_db"
+    DB_USER    : str = "ssm_user"
     DB_PASSWORD: str = ""
 
     # JWT
-    SECRET_KEY: str  # REQUIRED — no default, must be in .env
-    ALGORITHM: str = "HS256"
+    SECRET_KEY: str  # REQUIRED
+    ALGORITHM : str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # App
-    APP_NAME: str = "SSM System"
-    APP_ENV: str = "development"
-    UPLOAD_DIR: str = "uploads"
+    APP_NAME      : str = "SSM System"
+    APP_ENV       : str = "development"
+    UPLOAD_DIR    : str = "uploads"
     MAX_FILE_SIZE_MB: int = 5
 
     # CORS
@@ -30,7 +33,75 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
     @property
-    def DATABASE_URL(self) -> str:
+    def db_url(self) -> str:
+        # Railway gives full DATABASE_URL — use it directly
+        if self.DATABASE_URL:
+            # Railway uses postgres:// but SQLAlchemy needs postgresql://
+            url = self.DATABASE_URL
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url
+        # Local dev fallback
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @property
+    def origins_list(self) -> list[str]:
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+
+    @property
+    def is_production(self) -> bool:
+        return self.APP_ENV == "production"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
+from functools import lru_cache
+import os
+
+
+class Settings(BaseSettings):
+    # Database — Railway provides full URL directly
+    DATABASE_URL: str = ""
+
+    # Individual parts (fallback for local dev)
+    DB_HOST    : str = "localhost"
+    DB_PORT    : int = 5432
+    DB_NAME    : str = "ssm_db"
+    DB_USER    : str = "ssm_user"
+    DB_PASSWORD: str = ""
+
+    # JWT
+    SECRET_KEY: str  # REQUIRED
+    ALGORITHM : str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # App
+    APP_NAME      : str = "SSM System"
+    APP_ENV       : str = "development"
+    UPLOAD_DIR    : str = "uploads"
+    MAX_FILE_SIZE_MB: int = 5
+
+    # CORS
+    ALLOWED_ORIGINS: str = "http://localhost"
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+    @property
+    def db_url(self) -> str:
+        # Railway gives full DATABASE_URL — use it directly
+        if self.DATABASE_URL:
+            # Railway uses postgres:// but SQLAlchemy needs postgresql://
+            url = self.DATABASE_URL
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url
+        # Local dev fallback
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property

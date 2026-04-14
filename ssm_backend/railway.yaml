@@ -1,0 +1,18 @@
+# services:
+#   - type: web
+#     name: ssm-backend
+#     env: python
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+#     envVars:
+#       - key: APP_ENV
+#         value: production
+
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

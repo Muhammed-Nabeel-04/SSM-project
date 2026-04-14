@@ -3,12 +3,11 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from config import settings
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.db_url,        # ← changed from settings.DATABASE_URL
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
     echo=settings.APP_ENV == "development",
-    connect_args={"sslmode": "require"},  # ← required for Supabase
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -19,7 +18,6 @@ class Base(DeclarativeBase):
 
 
 def get_db():
-    """FastAPI dependency — yields DB session, always closes after request."""
     db = SessionLocal()
     try:
         yield db
@@ -28,6 +26,5 @@ def get_db():
 
 
 def create_tables():
-    """Called once on startup to create all tables if they don't exist."""
-    from models import user, ssm, document  # noqa: F401 — import triggers registration
+    from models import user, ssm, document  # noqa
     Base.metadata.create_all(bind=engine)

@@ -1,0 +1,346 @@
+2026-04-15 00:21:42,532 | INFO | sqlalchemy.engine.Engine | select pg_catalog.version()
+2026-04-15 00:21:42,532 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2026-04-15 00:21:42,805 | INFO | sqlalchemy.engine.Engine | select current_schema()
+2026-04-15 00:21:42,805 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2026-04-15 00:21:43,096 | INFO | sqlalchemy.engine.Engine | show standard_conforming_strings
+2026-04-15 00:21:43,096 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2026-04-15 00:21:43,377 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-04-15 00:21:43,380 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:43,382 | INFO | sqlalchemy.engine.Engine | [generated in 0.00124s] {'table_name': 'departments', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:43,664 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:43,664 | INFO | sqlalchemy.engine.Engine | [cached since 0.2843s ago] {'table_name': 'users', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:43,805 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:43,805 | INFO | sqlalchemy.engine.Engine | [cached since 0.4248s ago] {'table_name': 'user_sessions', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:43,944 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:43,944 | INFO | sqlalchemy.engine.Engine | [cached since 0.5646s ago] {'table_name': 'ssm_forms', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,084 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,084 | INFO | sqlalchemy.engine.Engine | [cached since 0.7041s ago] {'table_name': 'academic_data', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,224 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,224 | INFO | sqlalchemy.engine.Engine | [cached since 0.8444s ago] {'table_name': 'development_data', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,473 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,473 | INFO | sqlalchemy.engine.Engine | [cached since 1.093s ago] {'table_name': 'skill_data', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,609 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,611 | INFO | sqlalchemy.engine.Engine | [cached since 1.231s ago] {'table_name': 'discipline_data', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,792 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,793 | INFO | sqlalchemy.engine.Engine | [cached since 1.413s ago] {'table_name': 'leadership_data', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:44,935 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:44,936 | INFO | sqlalchemy.engine.Engine | [cached since 1.557s ago] {'table_name': 'calculated_scores', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:45,078 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:45,078 | INFO | sqlalchemy.engine.Engine | [cached since 1.699s ago] {'table_name': 'uploaded_documents', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:45,219 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:45,219 | INFO | sqlalchemy.engine.Engine | [cached since 1.839s ago] {'table_name': 'student_activities', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:45,359 | INFO | sqlalchemy.engine.Engine | SELECT pg_catalog.pg_class.relname 
+FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relname = %(table_name)s AND pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s
+2026-04-15 00:21:45,360 | INFO | sqlalchemy.engine.Engine | [cached since 1.979s ago] {'table_name': 'system_settings', 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog'}
+2026-04-15 00:21:45,499 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE departments (
+	id SERIAL NOT NULL, 
+	name VARCHAR(100) NOT NULL, 
+	code VARCHAR(20) NOT NULL, 
+	created_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	UNIQUE (code)
+)
+
+
+2026-04-15 00:21:45,501 | INFO | sqlalchemy.engine.Engine | [no key 0.00201s] {}
+2026-04-15 00:21:45,686 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_departments_id ON departments (id)
+2026-04-15 00:21:45,686 | INFO | sqlalchemy.engine.Engine | [no key 0.00034s] {}
+2026-04-15 00:21:45,913 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE system_settings (
+	id INTEGER NOT NULL, 
+	academic_year VARCHAR(20) NOT NULL, 
+	current_semester INTEGER NOT NULL, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id)
+)
+
+
+2026-04-15 00:21:45,913 | INFO | sqlalchemy.engine.Engine | [no key 0.00045s] {}
+2026-04-15 00:21:46,073 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE users (
+	id SERIAL NOT NULL, 
+	register_number VARCHAR(20) NOT NULL, 
+	name VARCHAR(100) NOT NULL, 
+	email VARCHAR(150) NOT NULL, 
+	password_hash VARCHAR(255) NOT NULL, 
+	role VARCHAR(7) NOT NULL, 
+	department_id INTEGER, 
+	mentor_id INTEGER, 
+	is_active BOOLEAN, 
+	must_change_password BOOLEAN, 
+	created_at TIMESTAMP WITHOUT TIME ZONE, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE, 
+	phone VARCHAR(15), 
+	semester INTEGER, 
+	batch VARCHAR(20), 
+	year_of_study INTEGER, 
+	section VARCHAR(5), 
+	PRIMARY KEY (id), 
+	UNIQUE (email), 
+	FOREIGN KEY(department_id) REFERENCES departments (id) ON DELETE RESTRICT, 
+	FOREIGN KEY(mentor_id) REFERENCES users (id)
+)
+
+
+2026-04-15 00:21:46,074 | INFO | sqlalchemy.engine.Engine | [no key 0.00072s] {}
+2026-04-15 00:21:46,233 | INFO | sqlalchemy.engine.Engine | CREATE UNIQUE INDEX ix_users_register_number ON users (register_number)
+2026-04-15 00:21:46,233 | INFO | sqlalchemy.engine.Engine | [no key 0.00036s] {}
+2026-04-15 00:21:46,364 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_users_id ON users (id)
+2026-04-15 00:21:46,364 | INFO | sqlalchemy.engine.Engine | [no key 0.00033s] {}
+2026-04-15 00:21:46,504 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE user_sessions (
+	id SERIAL NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	token_hash VARCHAR(255) NOT NULL, 
+	refresh_token VARCHAR(255), 
+	device_info VARCHAR(255), 
+	ip_address VARCHAR(50), 
+	created_at TIMESTAMP WITHOUT TIME ZONE, 
+	expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	is_active BOOLEAN, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE, 
+	UNIQUE (refresh_token)
+)
+
+
+2026-04-15 00:21:46,505 | INFO | sqlalchemy.engine.Engine | [no key 0.00052s] {}
+2026-04-15 00:21:46,643 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_user_sessions_id ON user_sessions (id)
+2026-04-15 00:21:46,644 | INFO | sqlalchemy.engine.Engine | [no key 0.00034s] {}
+2026-04-15 00:21:46,780 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_user_sessions_token_hash ON user_sessions (token_hash)
+2026-04-15 00:21:46,780 | INFO | sqlalchemy.engine.Engine | [no key 0.00047s] {}
+2026-04-15 00:21:47,033 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE ssm_forms (
+	id SERIAL NOT NULL, 
+	student_id INTEGER NOT NULL, 
+	mentor_id INTEGER, 
+	hod_id INTEGER, 
+	academic_year VARCHAR(9) NOT NULL, 
+	status VARCHAR(13), 
+	mentor_remarks TEXT, 
+	hod_remarks TEXT, 
+	rejection_reason TEXT, 
+	submitted_at TIMESTAMP WITHOUT TIME ZONE, 
+	approved_at TIMESTAMP WITHOUT TIME ZONE, 
+	created_at TIMESTAMP WITHOUT TIME ZONE, 
+	updated_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(student_id) REFERENCES users (id) ON DELETE RESTRICT, 
+	FOREIGN KEY(mentor_id) REFERENCES users (id), 
+	FOREIGN KEY(hod_id) REFERENCES users (id)
+)
+
+
+2026-04-15 00:21:47,034 | INFO | sqlalchemy.engine.Engine | [no key 0.00068s] {}
+2026-04-15 00:21:47,192 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_ssm_forms_id ON ssm_forms (id)
+2026-04-15 00:21:47,193 | INFO | sqlalchemy.engine.Engine | [no key 0.00084s] {}
+2026-04-15 00:21:47,354 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE academic_data (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	internal_gpa FLOAT, 
+	university_gpa FLOAT, 
+	has_arrear BOOLEAN, 
+	attendance_pct FLOAT, 
+	project_status VARCHAR(15), 
+	mentor_feedback VARCHAR(9), 
+	hod_feedback VARCHAR(9), 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:47,355 | INFO | sqlalchemy.engine.Engine | [no key 0.00081s] {}
+2026-04-15 00:21:47,498 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE development_data (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	nptel_tier VARCHAR(12), 
+	online_cert_count INTEGER, 
+	internship_duration VARCHAR(15), 
+	competition_result VARCHAR(12), 
+	publication_type VARCHAR(10), 
+	professional_programs_count INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:47,498 | INFO | sqlalchemy.engine.Engine | [no key 0.00054s] {}
+2026-04-15 00:21:47,640 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE skill_data (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	technical_skill VARCHAR(9), 
+	soft_skill VARCHAR(9), 
+	team_management VARCHAR(9), 
+	placement_training_pct FLOAT, 
+	placement_lpa FLOAT, 
+	higher_studies BOOLEAN, 
+	industry_interactions INTEGER, 
+	research_papers_count INTEGER, 
+	innovation_level VARCHAR(11), 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:47,640 | INFO | sqlalchemy.engine.Engine | [no key 0.00070s] {}
+2026-04-15 00:21:47,783 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE discipline_data (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	discipline_level VARCHAR(13), 
+	dress_code_level VARCHAR(17), 
+	dept_contribution VARCHAR(21), 
+	social_media_level VARCHAR(21), 
+	attendance_pct FLOAT, 
+	late_entries BOOLEAN, 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:47,784 | INFO | sqlalchemy.engine.Engine | [no key 0.00077s] {}
+2026-04-15 00:21:47,993 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE leadership_data (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	formal_role VARCHAR(13), 
+	event_leadership VARCHAR(12), 
+	community_leadership VARCHAR(11), 
+	innovation_initiative VARCHAR(11), 
+	team_management_leadership VARCHAR(9), 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:47,994 | INFO | sqlalchemy.engine.Engine | [no key 0.00071s] {}
+2026-04-15 00:21:48,153 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE calculated_scores (
+	id SERIAL NOT NULL, 
+	form_id INTEGER, 
+	academic_score FLOAT, 
+	development_score FLOAT, 
+	skill_score FLOAT, 
+	discipline_score FLOAT, 
+	leadership_score FLOAT, 
+	grand_total FLOAT, 
+	star_rating INTEGER, 
+	calculated_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	UNIQUE (form_id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:48,154 | INFO | sqlalchemy.engine.Engine | [no key 0.00062s] {}
+2026-04-15 00:21:48,297 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE uploaded_documents (
+	id SERIAL NOT NULL, 
+	form_id INTEGER NOT NULL, 
+	category VARCHAR(11) NOT NULL, 
+	document_type VARCHAR(100) NOT NULL, 
+	original_filename VARCHAR(255) NOT NULL, 
+	file_path VARCHAR(500) NOT NULL, 
+	file_size_kb INTEGER, 
+	ocr_extracted_text VARCHAR(2000), 
+	verification_status VARCHAR(7), 
+	verification_note VARCHAR(500), 
+	uploaded_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:48,298 | INFO | sqlalchemy.engine.Engine | [no key 0.00054s] {}
+2026-04-15 00:21:48,472 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_uploaded_documents_id ON uploaded_documents (id)
+2026-04-15 00:21:48,473 | INFO | sqlalchemy.engine.Engine | [no key 0.00040s] {}
+2026-04-15 00:21:48,633 | INFO | sqlalchemy.engine.Engine | 
+CREATE TABLE student_activities (
+	id SERIAL NOT NULL, 
+	form_id INTEGER NOT NULL, 
+	student_id INTEGER NOT NULL, 
+	category VARCHAR(11) NOT NULL, 
+	activity_type VARCHAR(12) NOT NULL, 
+	internal_gpa FLOAT, 
+	university_gpa FLOAT, 
+	attendance_pct FLOAT, 
+	has_arrear BOOLEAN, 
+	project_status VARCHAR(30), 
+	nptel_tier VARCHAR(20), 
+	platform_name VARCHAR(100), 
+	course_name VARCHAR(200), 
+	internship_company VARCHAR(200), 
+	internship_duration VARCHAR(20), 
+	competition_name VARCHAR(200), 
+	competition_result VARCHAR(20), 
+	publication_title VARCHAR(200), 
+	publication_type VARCHAR(20), 
+	program_name VARCHAR(200), 
+	placement_company VARCHAR(200), 
+	placement_lpa FLOAT, 
+	higher_study_exam VARCHAR(100), 
+	higher_study_score VARCHAR(50), 
+	industry_org VARCHAR(200), 
+	research_title VARCHAR(200), 
+	research_journal VARCHAR(200), 
+	role_name VARCHAR(200), 
+	role_level VARCHAR(20), 
+	event_name VARCHAR(200), 
+	event_level VARCHAR(20), 
+	community_org VARCHAR(200), 
+	community_level VARCHAR(20), 
+	file_path VARCHAR(500), 
+	original_filename VARCHAR(255), 
+	file_size_kb INTEGER, 
+	ocr_extracted_text TEXT, 
+	ocr_status VARCHAR(7) NOT NULL, 
+	ocr_note TEXT, 
+	mentor_status VARCHAR(12) NOT NULL, 
+	mentor_note TEXT, 
+	submitted_at TIMESTAMP WITHOUT TIME ZONE, 
+	verified_at TIMESTAMP WITHOUT TIME ZONE, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(form_id) REFERENCES ssm_forms (id) ON DELETE CASCADE, 
+	FOREIGN KEY(student_id) REFERENCES users (id) ON DELETE CASCADE
+)
+
+
+2026-04-15 00:21:48,635 | INFO | sqlalchemy.engine.Engine | [no key 0.00110s] {}
+2026-04-15 00:21:48,793 | INFO | sqlalchemy.engine.Engine | CREATE INDEX ix_student_activities_id ON student_activities (id)
+2026-04-15 00:21:48,793 | INFO | sqlalchemy.engine.Engine | [no key 0.00037s] {}
+2026-04-15 00:21:48,934 | INFO | sqlalchemy.engine.Engine | COMMIT
+2026-04-15 00:21:49,074 | INFO | ssm | SSM System started — ENV: development
