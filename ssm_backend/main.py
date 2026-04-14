@@ -7,12 +7,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import os
 
-from config import settings
-from database import create_tables
-from routers import auth, student, mentor, hod, admin
-from routers.files import router as files_router
-from routers.activity import router as activity_router
-from routers.settings import router as academic_router
+from .config import settings
+from .database import create_tables
+from .routers import auth, student, mentor, hod, admin
+from .routers.files import router as files_router
+from .routers.activity import router as activity_router
+from .routers.settings import router as academic_router
 import logging
 
 logging.basicConfig(
