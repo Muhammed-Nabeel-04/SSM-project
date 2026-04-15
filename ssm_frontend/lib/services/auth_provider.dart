@@ -82,7 +82,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'CRASH: $e';
+      _errorMessage = 'Connection failed. Please try again.';
       _loading = false;
       notifyListeners();
       return false;

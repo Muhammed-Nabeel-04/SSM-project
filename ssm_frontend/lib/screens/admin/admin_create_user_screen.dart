@@ -320,11 +320,10 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                         DropdownButtonFormField<int>(
                           value: _semester,
                           decoration: const InputDecoration(
-                            labelText: 'Semester',
-                            hintText: 'Select semester (optional)',
+                            labelText: 'Semester *',
                             prefixIcon: Icon(Icons.numbers_rounded, size: 20),
                           ),
-                          hint: const Text('Select semester (optional)'),
+                          hint: const Text('Select semester'),
                           items: List.generate(8, (i) => i + 1)
                               .map((s) => DropdownMenuItem<int>(
                                     value: s,
@@ -333,6 +332,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                                   ))
                               .toList(),
                           onChanged: (val) => setState(() => _semester = val),
+                          validator: (v) => _role == 'student' && v == null ? 'Required' : null,
                         ),
                         const SizedBox(height: 14),
 
@@ -342,11 +342,12 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                           child: TextFormField(
                             controller: _batchCtrl,
                             decoration: const InputDecoration(
-                              labelText: 'Batch (optional)',
+                              labelText: 'Batch *',
                               hintText: 'e.g. 2022-2026',
                               prefixIcon:
                                   Icon(Icons.calendar_today_rounded, size: 20),
                             ),
+                            validator: (v) => _role == 'student' && (v == null || v.isEmpty) ? 'Required' : null,
                           ),
                         ),
 
@@ -357,10 +358,11 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                             controller: _sectionCtrl,
                             textCapitalization: TextCapitalization.characters,
                             decoration: const InputDecoration(
-                              labelText: 'Section (optional)',
+                              labelText: 'Section *',
                               hintText: 'e.g. A',
                               prefixIcon: Icon(Icons.group_rounded, size: 20),
                             ),
+                            validator: (v) => _role == 'student' && (v == null || v.isEmpty) ? 'Required' : null,
                           ),
                         ),
                       ],

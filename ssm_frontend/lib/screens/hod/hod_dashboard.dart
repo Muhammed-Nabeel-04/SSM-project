@@ -66,7 +66,25 @@ class _HodDashboardState extends State<HodDashboard> {
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
-            onPressed: () => context.read<AuthProvider>().logout(),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true && context.mounted) {
+                context.read<AuthProvider>().logout();
+              }
+            },
           ),
         ],
       ),

@@ -107,10 +107,125 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                 user: users[i],
                 role: role,
                 onToggle: () => _toggle(role, users[i]['id'], users[i]['is_active']),
+                onTap: () => _showUserDetail(context, users[i], role),
               ),
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  void _showUserDetail(BuildContext context, Map<String, dynamic> user, String role) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (_, ctrl) => SingleChildScrollView(
+          controller: ctrl,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                  child: Text(
+                    (user['name'] ?? '?').substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user['name'] ?? '',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 18)),
+                    Text(role.toUpperCase(),
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                )),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (user['is_active'] == true
+                            ? AppColors.success
+                            : AppColors.textLight)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: (user['is_active'] == true
+                              ? AppColors.success
+                              : AppColors.textLight)
+                          .withOpacity(0.4),
+                    ),
+                  ),
+                  child: Text(
+                    user['is_active'] == true ? 'Active' : 'Inactive',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: user['is_active'] == true
+                            ? AppColors.success
+                            : AppColors.textLight),
+                  ),
+                ),
+              ]),
+              const Divider(height: 28),
+              _DetailRow(Icons.badge_outlined, 'Register No.', user['register_number']),
+              _DetailRow(Icons.email_outlined, 'Email', user['email']),
+              _DetailRow(Icons.phone_outlined, 'Phone', user['phone']),
+              _DetailRow(Icons.business_rounded, 'Department', user['department_name']),
+              if (user['mentor_name'] != null)
+                _DetailRow(Icons.supervisor_account_rounded, 'Mentor', user['mentor_name']),
+              if (user['semester'] != null)
+                _DetailRow(Icons.numbers_rounded, 'Semester', user['semester'].toString()),
+              if (user['batch'] != null)
+                _DetailRow(Icons.calendar_today_rounded, 'Batch', user['batch']),
+              if (user['section'] != null)
+                _DetailRow(Icons.group_rounded, 'Section', user['section']),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.toggle_on_rounded),
+                  label: Text(user['is_active'] == true
+                      ? 'Deactivate User'
+                      : 'Activate User'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: user['is_active'] == true
+                        ? AppColors.error
+                        : AppColors.success,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _toggle(role, user['id'], user['is_active']);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -120,7 +235,8 @@ class _UserTile extends StatelessWidget {
   final Map<String, dynamic> user;
   final String role;
   final VoidCallback onToggle;
-  const _UserTile({required this.user, required this.role, required this.onToggle});
+  final VoidCallback onTap;
+  const _UserTile({required this.user, required this.role, required this.onToggle, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +246,7 @@ class _UserTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: CircleAvatar(
           backgroundColor: isActive
@@ -149,8 +266,8 @@ class _UserTile extends StatelessWidget {
         subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(user['register_number'] ?? user['email'] ?? '',
               style: const TextStyle(fontSize: 12)),
-          if (user['department_id'] != null)
-            Text('Dept ID: ${user['department_id']}',
+          if (user['department_name'] != null)
+            Text(user['department_name'],
                 style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
         ]),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -165,14 +282,40 @@ class _UserTile extends StatelessWidget {
                 style: TextStyle(color: color, fontSize: 11,
                     fontWeight: FontWeight.w600)),
           ),
-          const SizedBox(width: 8),
-          Switch(
-            value: isActive,
-            onChanged: (_) => onToggle(),
-            activeColor: AppColors.success,
-          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded,
+              color: AppColors.textLight, size: 20),
         ]),
       ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+  const _DetailRow(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == null || value!.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: 10),
+        Text('$label: ',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary)),
+        Expanded(
+          child: Text(value!,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.textPrimary)),
+        ),
+      ]),
     );
   }
 }

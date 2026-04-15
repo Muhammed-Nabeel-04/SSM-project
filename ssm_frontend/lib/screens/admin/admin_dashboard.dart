@@ -34,7 +34,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       // First-time setup check
       try {
         final deptCount = await ApiService.getDepartmentCount();
-        if (deptCount == 0 && mounted) {
+        if (deptCount <= 1 && mounted) {
           context.go('/setup');
           return;
         }
@@ -57,38 +57,44 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final starDist = _analytics?['star_distribution'] as Map? ?? {};
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: const Text('Admin Dashboard',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         backgroundColor: AppColors.adminColor,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.apartment_rounded),
-            tooltip: 'Departments',
-            onPressed: () => context.push('/setup'),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: _load,
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            tooltip: 'Academic Settings',
-            onPressed: () => context.push('/admin/settings'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.manage_accounts_rounded),
-            tooltip: 'User Management',
-            onPressed: () => context.push('/admin/users'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
-            tooltip: 'Profile',
-            onPressed: () => context.push('/profile'),
-          ),
-          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
-            onPressed: () => context.read<AuthProvider>().logout(),
+            tooltip: 'Logout',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true && context.mounted) {
+                auth.logout();
+              }
+            },
           ),
         ],
       ),
@@ -99,12 +105,116 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 onRefresh: _load,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
                   child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── STATS GRID ───────────────────────────────
-                        GridView.count(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── HEADER BANNER ─────────────────────────────────
+                      Container(
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          color: AppColors.adminColor,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(28),
+                            bottomRight: Radius.circular(28),
+                          ),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 26,
+                              backgroundColor: Colors.white.withOpacity(0.25),
+                              child: Text(
+                                (auth.name ?? 'A').substring(0, 1).toUpperCase(),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(auth.name ?? 'Admin',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700)),
+                                const Text('System Administrator',
+                                    style: TextStyle(
+                                        color: Colors.white70, fontSize: 12)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
+                        child: Text('Quick Actions',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: Color(0xFF1A1A2E))),
+                      ),
+
+                      // ── QUICK ACTIONS GRID ────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.55,
+                          children: [
+                            _QuickActionCard(
+                              icon: Icons.manage_accounts_rounded,
+                              label: 'User Management',
+                              subtitle: 'Add, edit & manage users',
+                              color: const Color(0xFF4361EE),
+                              onTap: () => context.push('/admin/users'),
+                            ),
+                            _QuickActionCard(
+                              icon: Icons.apartment_rounded,
+                              label: 'Departments',
+                              subtitle: 'Manage departments',
+                              color: const Color(0xFF7209B7),
+                              onTap: () => context.push('/setup'),
+                            ),
+                            _QuickActionCard(
+                              icon: Icons.settings_rounded,
+                              label: 'Academic Settings',
+                              subtitle: 'Year & semester control',
+                              color: const Color(0xFF3A86FF),
+                              onTap: () => context.push('/admin/settings'),
+                            ),
+                            _QuickActionCard(
+                              icon: Icons.account_circle_rounded,
+                              label: 'My Profile',
+                              subtitle: 'View & edit profile',
+                              color: const Color(0xFF06D6A0),
+                              onTap: () => context.push('/profile'),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 24, 16, 10),
+                        child: Text('Analytics Overview',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: Color(0xFF1A1A2E))),
+                      ),
+
+                      // ── STATS GRID ────────────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
@@ -124,8 +234,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 AppColors.approved),
                             _AdminStatCard(
                                 'Pending Mentor',
-                                _analytics?['pending_mentor']?.toString() ??
-                                    '0',
+                                _analytics?['pending_mentor']?.toString() ?? '0',
                                 Icons.hourglass_empty_rounded,
                                 AppColors.mentorReview),
                             _AdminStatCard(
@@ -135,79 +244,76 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 AppColors.hodReview),
                           ],
                         ),
+                      ),
 
-                        const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                        // ── AVG SCORE ─────────────────────────────────
-                        Card(
+                      // ── AVG / HIGHEST / REJECTED ROW ──────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceAround,
                                 children: [
-                                  Column(children: [
-                                    Text(
-                                      _analytics?['average_score']
-                                              ?.toString() ??
-                                          '0',
-                                      style: const TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.primary),
-                                    ),
-                                    const Text('Avg Score',
-                                        style: TextStyle(
-                                            color: AppColors.textSecondary)),
-                                  ]),
-                                  Column(children: [
-                                    Text(
-                                      _analytics?['highest_score']
-                                              ?.toStringAsFixed(0) ??
-                                          '0',
-                                      style: const TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.success),
-                                    ),
-                                    const Text('Highest',
-                                        style: TextStyle(
-                                            color: AppColors.textSecondary)),
-                                  ]),
-                                  Column(children: [
-                                    Text(
-                                      _analytics?['rejected']?.toString() ??
-                                          '0',
-                                      style: const TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.rejected),
-                                    ),
-                                    const Text('Rejected',
-                                        style: TextStyle(
-                                            color: AppColors.textSecondary)),
-                                  ]),
+                                  _ScorePill(
+                                    label: 'Avg Score',
+                                    value: _analytics?['average_score']
+                                            ?.toString() ??
+                                        '0',
+                                    color: AppColors.primary,
+                                  ),
+                                  _ScorePill(
+                                    label: 'Highest',
+                                    value: (_analytics?['highest_score']
+                                                as num?)
+                                            ?.toStringAsFixed(0) ??
+                                        '0',
+                                    color: AppColors.success,
+                                  ),
+                                  _ScorePill(
+                                    label: 'Rejected',
+                                    value: _analytics?['rejected']
+                                            ?.toString() ??
+                                        '0',
+                                    color: AppColors.rejected,
+                                  ),
                                 ]),
                           ),
                         ),
+                      ),
 
-                        const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                        // ── STAR DISTRIBUTION BAR CHART ───────────────
-                        if (starDist.isNotEmpty) ...[
-                          const Text('Star Rating Distribution',
+                      // ── STAR DISTRIBUTION BAR CHART ───────────────────
+                      if (starDist.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text('Star Rating Distribution',
                               style: TextStyle(
                                   fontWeight: FontWeight.w700, fontSize: 15)),
-                          const SizedBox(height: 12),
-                          SizedBox(
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
                             height: 160,
                             child: BarChart(
                               BarChartData(
                                 alignment: BarChartAlignment.spaceAround,
                                 maxY: ((starDist.values
-                                        .map((v) => (v as num).toDouble())
-                                        .fold(0.0, (a, b) => a > b ? a : b)) +
-                                    2),
+                                            .map((v) =>
+                                                (v as num).toDouble())
+                                            .fold(
+                                                0.0,
+                                                (a, b) =>
+                                                    a > b ? a : b)) +
+                                        2),
                                 barGroups: [1, 2, 3, 4, 5].map((star) {
                                   final colors = [
                                     Colors.red,
@@ -216,16 +322,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     Colors.lightGreen,
                                     Colors.green
                                   ];
-                                  return BarChartGroupData(x: star, barRods: [
-                                    BarChartRodData(
-                                      toY: (starDist[star.toString()] as num?)
-                                              ?.toDouble() ??
-                                          0,
-                                      color: colors[star - 1],
-                                      width: 28,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ]);
+                                  return BarChartGroupData(
+                                      x: star,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: (starDist[star.toString()]
+                                                      as num?)
+                                                  ?.toDouble() ??
+                                              0,
+                                          color: colors[star - 1],
+                                          width: 28,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                      ]);
                                 }).toList(),
                                 titlesData: FlTitlesData(
                                   leftTitles: const AxisTitles(
@@ -242,7 +352,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                       showTitles: true,
                                       getTitlesWidget: (v, _) => Text(
                                           '${v.toInt()}⭐',
-                                          style: const TextStyle(fontSize: 11)),
+                                          style: const TextStyle(
+                                              fontSize: 11)),
                                     ),
                                   ),
                                 ),
@@ -251,20 +362,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                        ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
-                        // ── TOP STUDENTS ──────────────────────────────
-                        const Text('Top Students',
+                      // ── TOP STUDENTS ──────────────────────────────────
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('Top Students',
                             style: TextStyle(
                                 fontWeight: FontWeight.w700, fontSize: 15)),
-                        const SizedBox(height: 12),
+                      ),
+                      const SizedBox(height: 12),
 
-                        ...(_topStudents ?? []).asMap().entries.map((e) {
-                          final i = e.key;
-                          final s = e.value;
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
+                      ...(_topStudents ?? []).asMap().entries.map((e) {
+                        final i = e.key;
+                        final s = e.value;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          child: Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: i < 3
@@ -300,17 +420,86 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                         size: 13),
                                   ]),
                             ),
-                          );
-                        }),
+                          ),
+                        );
+                      }),
 
-                        const SizedBox(height: 32),
-                      ]),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
       ),
     );
   }
 }
+
+// ── QUICK ACTION CARD ─────────────────────────────────────────────────────────
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.15), width: 1.5),
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF1A1A2E))),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.textSecondary)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── STAT CARD ─────────────────────────────────────────────────────────────────
 
 class _AdminStatCard extends StatelessWidget {
   final String label;
@@ -340,4 +529,23 @@ class _AdminStatCard extends StatelessWidget {
           ]),
         ]),
       );
+}
+
+// ── SCORE PILL ────────────────────────────────────────────────────────────────
+
+class _ScorePill extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _ScorePill(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Text(value,
+            style: TextStyle(
+                fontSize: 32, fontWeight: FontWeight.w800, color: color)),
+        Text(label,
+            style: const TextStyle(color: AppColors.textSecondary)),
+      ]);
 }

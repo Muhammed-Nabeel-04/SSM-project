@@ -4,10 +4,6 @@ import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
-import 'package:ssm_app/screens/admin/backend_settings_screen.dart';
-
-// TODO: Make sure to import your BackendSettingsScreen here!
-// import 'path/to/backend_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +17,18 @@ class _LoginScreenState extends State<LoginScreen> {
   final _pwdController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePwd = true;
-  bool _isStudent = true; // toggle student vs staff login
+
+  // 4 role options: 0=student, 1=mentor, 2=hod, 3=admin
+  int _selectedRole = 0;
+
+  static const _roles = [
+    _RoleOption('Student',  Icons.school_rounded,           Color(0xFF4361EE), isStudent: true),
+    _RoleOption('Mentor',   Icons.supervisor_account_rounded, Color(0xFF7209B7), isStudent: false),
+    _RoleOption('HOD',      Icons.admin_panel_settings_rounded, Color(0xFF3A86FF), isStudent: false),
+    _RoleOption('Admin',    Icons.manage_accounts_rounded,   Color(0xFF06D6A0), isStudent: false),
+  ];
+
+  bool get _isStudent => _selectedRole == 0;
 
   @override
   void dispose() {
@@ -38,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _pwdController.text,
       isStudent: _isStudent,
     );
-    // Navigation handled by GoRouter redirect on role change
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -52,31 +58,17 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final role = _roles[_selectedRole];
 
     return Scaffold(
       backgroundColor: AppColors.primary,
-      // ── SETTINGS APPBAR ──────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.settings_outlined, color: Colors.white),
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => BackendSettingsScreen(),
-          //       ),
-          //     );
-          //   },
-          //   tooltip: 'Backend Settings',
-          // ),
-        ],
       ),
       body: SafeArea(
         child: Column(children: [
-          // ── HEADER ──────────────────────────────────────────
+          // ── HEADER ────────────────────────────────────────────
           Expanded(
             flex: 2,
             child: Padding(
@@ -112,153 +104,160 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // ── FORM CARD ────────────────────────────────────────
+          // ── FORM CARD ──────────────────────────────────────────
           Expanded(
-            flex: 3,
+            flex: 4,
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Sign In',
-                        style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary)),
-                    const SizedBox(height: 4),
-                    const Text('Enter your register number and password',
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
-                    const SizedBox(height: 24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Sign In',
+                          style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary)),
+                      const SizedBox(height: 4),
+                      const Text('Select your role to continue',
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 13)),
+                      const SizedBox(height: 20),
 
-                    // Login type toggle
-                    Row(children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _isStudent = true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color:
-                                  _isStudent ? AppColors.primary : Colors.white,
-                              borderRadius: const BorderRadius.horizontal(
-                                  left: Radius.circular(10)),
-                              border: Border.all(color: AppColors.primary),
+                      // ── ROLE SELECTOR (4 cards) ──────────────────
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.8,
+                        children: List.generate(_roles.length, (i) {
+                          final r = _roles[i];
+                          final selected = _selectedRole == i;
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              _selectedRole = i;
+                              _regController.clear();
+                              _pwdController.clear();
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? r.color
+                                    : r.color.withOpacity(0.07),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: r.color.withOpacity(selected ? 1 : 0.25),
+                                    width: selected ? 2 : 1),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: Row(children: [
+                                Icon(r.icon,
+                                    color: selected ? Colors.white : r.color,
+                                    size: 20),
+                                const SizedBox(width: 8),
+                                Text(r.label,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        color: selected
+                                            ? Colors.white
+                                            : r.color)),
+                              ]),
                             ),
-                            child: Text('Student',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: _isStudent
-                                        ? Colors.white
-                                        : AppColors.primary,
-                                    fontWeight: FontWeight.w600)),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── IDENTIFIER FIELD ────────────────────────
+                      TextFormField(
+                        controller: _regController,
+                        decoration: InputDecoration(
+                          labelText:
+                              _isStudent ? 'Register Number' : 'Email',
+                          prefixIcon: Icon(_isStudent
+                              ? Icons.badge_outlined
+                              : Icons.email_outlined),
+                        ),
+                        textCapitalization: _isStudent
+                            ? TextCapitalization.characters
+                            : TextCapitalization.none,
+                        keyboardType: _isStudent
+                            ? TextInputType.text
+                            : TextInputType.emailAddress,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // ── PASSWORD FIELD ───────────────────────────
+                      TextFormField(
+                        controller: _pwdController,
+                        obscureText: _obscurePwd,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscurePwd
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined),
+                            onPressed: () =>
+                                setState(() => _obscurePwd = !_obscurePwd),
                           ),
                         ),
+                        validator: (v) => (v == null || v.length < 8)
+                            ? 'Min 8 characters'
+                            : null,
                       ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _isStudent = false),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: !_isStudent
-                                  ? AppColors.primary
-                                  : Colors.white,
-                              borderRadius: const BorderRadius.horizontal(
-                                  right: Radius.circular(10)),
-                              border: Border.all(color: AppColors.primary),
-                            ),
-                            child: Text('Staff / Admin',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: !_isStudent
-                                        ? Colors.white
-                                        : AppColors.primary,
-                                    fontWeight: FontWeight.w600)),
-                          ),
+                      const SizedBox(height: 8),
+
+                      if (auth.errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ErrorBanner(auth.errorMessage!),
+                        ),
+
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: auth.loading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: role.color),
+                          icon: auth.loading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : Icon(role.icon, size: 18),
+                          label: auth.loading
+                              ? const Text('Signing in...')
+                              : Text('Sign in as ${role.label}'),
                         ),
                       ),
-                    ]),
-                    const SizedBox(height: 16),
 
-                    // Register number (student) or email (staff)
-                    TextFormField(
-                      controller: _regController,
-                      decoration: InputDecoration(
-                        labelText: _isStudent ? 'Register Number' : 'Email',
-                        prefixIcon: Icon(_isStudent
-                            ? Icons.badge_outlined
-                            : Icons.email_outlined),
-                      ),
-                      textCapitalization: _isStudent
-                          ? TextCapitalization.characters
-                          : TextCapitalization.none,
-                      keyboardType: _isStudent
-                          ? TextInputType.text
-                          : TextInputType.emailAddress,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Password
-                    TextFormField(
-                      controller: _pwdController,
-                      obscureText: _obscurePwd,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePwd
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () =>
-                              setState(() => _obscurePwd = !_obscurePwd),
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'Contact admin if you need access',
+                          style: TextStyle(
+                              color: AppColors.textLight, fontSize: 12),
                         ),
                       ),
-                      validator: (v) => (v == null || v.length < 8)
-                          ? 'Min 8 characters'
-                          : null,
-                    ),
-                    const SizedBox(height: 8),
-
-                    if (auth.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: ErrorBanner(auth.errorMessage!),
-                      ),
-
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: auth.loading ? null : _login,
-                        child: auth.loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : const Text('Sign In'),
-                      ),
-                    ),
-
-                    const Spacer(),
-                    const Center(
-                      child: Text(
-                        'Contact admin if you need access',
-                        style:
-                            TextStyle(color: AppColors.textLight, fontSize: 12),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -267,4 +266,12 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+class _RoleOption {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isStudent;
+  const _RoleOption(this.label, this.icon, this.color, {required this.isStudent});
 }
