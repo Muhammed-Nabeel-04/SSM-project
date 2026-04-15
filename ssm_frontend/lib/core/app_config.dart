@@ -7,7 +7,7 @@ class AppConfig {
   // Standard localhost for Web or iOS Simulator
   static const String urlLocalhost = 'http://127.0.0.1:8000';
 
-  static const String _defaultUrl = 'https://ssm-project-production.up.railway.app';
+  static const String _defaultUrl = 'https://ssm-project-production-20c9.up.railway.app';
 
   static const String _keyBackendUrl = 'backend_url';
   static late SharedPreferences _prefs;

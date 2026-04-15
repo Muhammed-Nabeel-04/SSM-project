@@ -81,8 +81,8 @@ class AuthProvider extends ChangeNotifier {
       _state = AuthState.unauthenticated;
       notifyListeners();
       return false;
-    } catch (_) {
-      _errorMessage = 'Connection failed. Check server.';
+    } catch (e) {
+      _errorMessage = 'CRASH: $e';
       _loading = false;
       notifyListeners();
       return false;
