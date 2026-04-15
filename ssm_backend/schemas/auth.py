@@ -50,6 +50,11 @@ class UserCreate(BaseModel):
     role:            UserRole
     department_id:   Optional[int] = None
     mentor_id:       Optional[int] = None
+    # Student profile fields (optional — can be set by admin on creation)
+    semester:        Optional[int] = None
+    year_of_study:   Optional[int] = None
+    batch:           Optional[str] = None
+    section:         Optional[str] = None
 
     @field_validator("password")
     @classmethod

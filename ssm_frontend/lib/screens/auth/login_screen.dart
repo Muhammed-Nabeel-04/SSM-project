@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import 'package:ssm_app/screens/admin/backend_settings_screen.dart';
+
+// TODO: Make sure to import your BackendSettingsScreen here!
+// import 'path/to/backend_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,6 +55,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primary,
+      // ── SETTINGS APPBAR ──────────────────────────────────────────
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BackendSettingsScreen(),
+                ),
+              );
+            },
+            tooltip: 'Backend Settings',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(children: [
           // ── HEADER ──────────────────────────────────────────

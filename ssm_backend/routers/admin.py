@@ -190,6 +190,8 @@ async def bulk_import_users(
         raise HTTPException(status_code=400, detail="Only CSV files are accepted")
 
     contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="CSV file size exceeds 2 MB limit")
     try:
         text = contents.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -283,26 +285,25 @@ async def bulk_import_users(
             batch         = row.get("batch",   "").strip() or None
             section       = row.get("section", "").strip() or None
 
-            user = User(
-    register_number      = reg,
-    name                 = name,
-    email                = email,
-    password_hash        = hash_password(phone),
-    role                 = role,
-    phone                = phone,
-    department_id        = dept_id,
-    mentor_id            = mentor_id,
-    semester             = semester,
-    year_of_study        = year_of_study,
-    batch                = batch,
-    section              = section,
-    must_change_password = True,   # ← force change on first login
-)
-            db.add(user)
-            db.flush()
+            with db.begin_nested():
+                user = User(
+                    register_number      = reg,
+                    name                 = name,
+                    email                = email,
+                    password_hash        = hash_password(phone),
+                    role                 = role,
+                    phone                = phone,
+                    department_id        = dept_id,
+                    mentor_id            = mentor_id,
+                    semester             = semester,
+                    year_of_study        = year_of_study,
+                    batch                = batch,
+                    section              = section,
+                    must_change_password = True,   # ← force change on first login
+                )
+                db.add(user)
             created.append({"row": row_num, "register_number": reg, "name": name})
         except Exception as e:
-            db.rollback()
             failed.append({"row": row_num, "register_number": reg, "reason": str(e)})
             continue
 

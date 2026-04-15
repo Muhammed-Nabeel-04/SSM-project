@@ -120,6 +120,15 @@ def update_profile(
     (used by OCR name-matching and admin reports).
     """
     update_data = payload.model_dump(exclude_unset=True)
+    
+    if "email" in update_data:
+        if db.query(User).filter(User.email == update_data["email"], User.id != current_user.id).first():
+            raise HTTPException(status_code=400, detail="Email is already in use by another account.")
+            
+    if "phone" in update_data:
+        if db.query(User).filter(User.phone == update_data["phone"], User.id != current_user.id).first():
+            raise HTTPException(status_code=400, detail="Phone number is already in use by another account.")
+
     for field, value in update_data.items():
         setattr(current_user, field, value)
     current_user.updated_at = datetime.utcnow()
@@ -156,15 +165,20 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Register number or email already exists")
 
     user = User(
-    register_number      = payload.register_number,
-    name                 = payload.name,
-    email                = payload.email,
-    password_hash        = hash_password(payload.password),
-    role                 = payload.role,
-    department_id        = payload.department_id,
-    mentor_id            = payload.mentor_id,
-    must_change_password = True,   # ← force change on first login
-)
+        register_number      = payload.register_number,
+        name                 = payload.name,
+        email                = payload.email,
+        password_hash        = hash_password(payload.password),
+        role                 = payload.role,
+        phone                = payload.password,  # default password = phone; also store as phone
+        department_id        = payload.department_id,
+        mentor_id            = payload.mentor_id,
+        semester             = payload.semester,
+        year_of_study        = payload.year_of_study,
+        batch                = payload.batch,
+        section              = payload.section,
+        must_change_password = True,   # ← force change on first login
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

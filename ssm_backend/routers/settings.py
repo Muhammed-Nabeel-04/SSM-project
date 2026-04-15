@@ -121,7 +121,8 @@ def promote_students(
     forms_created = []
 
     for student in students:
-        current_sem = student.semester or s.current_semester
+        # If semester not set by admin, default to 1 (safer than global setting)
+        current_sem = student.semester if student.semester is not None else 1
 
         if current_sem >= 8:
             # Graduate

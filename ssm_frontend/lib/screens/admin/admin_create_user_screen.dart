@@ -21,6 +21,9 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
   String _role = 'student';
   int? _deptId;
   int? _mentorId;
+  int? _semester;
+  final _batchCtrl = TextEditingController();
+  final _sectionCtrl = TextEditingController();
   bool _saving = false;
   String? _message;
   bool _success = false;
@@ -71,6 +74,8 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _batchCtrl.dispose();
+    _sectionCtrl.dispose();
     super.dispose();
   }
 
@@ -98,6 +103,8 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
     });
 
     final phone = _phoneCtrl.text.trim();
+    // Calculate year_of_study from semester
+    final yearOfStudy = _semester != null ? ((_semester! + 1) ~/ 2) : null;
 
     try {
       await ApiService.createUser({
@@ -109,6 +116,13 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
         'phone': phone,
         if (_deptId != null) 'department_id': _deptId,
         if (_mentorId != null) 'mentor_id': _mentorId,
+        // Student-only academic fields
+        if (_role == 'student' && _semester != null) 'semester': _semester,
+        if (_role == 'student' && yearOfStudy != null) 'year_of_study': yearOfStudy,
+        if (_role == 'student' && _batchCtrl.text.trim().isNotEmpty)
+          'batch': _batchCtrl.text.trim(),
+        if (_role == 'student' && _sectionCtrl.text.trim().isNotEmpty)
+          'section': _sectionCtrl.text.trim().toUpperCase(),
       });
 
       // Clear for next entry
@@ -116,11 +130,14 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
       _nameCtrl.clear();
       _emailCtrl.clear();
       _phoneCtrl.clear();
+      _batchCtrl.clear();
+      _sectionCtrl.clear();
       setState(() {
         _saving = false;
         _success = true;
         _message = 'User created! Default password = phone number.';
         _mentorId = null;
+        _semester = null;
       });
     } on ApiException catch (e) {
       setState(() {
@@ -168,6 +185,9 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                                 _deptId = null;
                                 _mentorId = null;
                                 _mentors = [];
+                                _semester = null;
+                                _batchCtrl.clear();
+                                _sectionCtrl.clear();
                               }),
                               child: Container(
                                 padding:
@@ -285,6 +305,64 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                                         : null,
                               ),
                         const SizedBox(height: 14),
+                      ],
+
+                      // ── Student academic fields ───────────────────────────────
+                      if (_role == 'student') ...[
+                        const Text('Academic Info',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+
+                        // Semester dropdown
+                        DropdownButtonFormField<int>(
+                          value: _semester,
+                          decoration: const InputDecoration(
+                            labelText: 'Semester',
+                            hintText: 'Select semester (optional)',
+                            prefixIcon: Icon(Icons.numbers_rounded, size: 20),
+                          ),
+                          hint: const Text('Select semester (optional)'),
+                          items: List.generate(8, (i) => i + 1)
+                              .map((s) => DropdownMenuItem<int>(
+                                    value: s,
+                                    child: Text(
+                                        'Semester $s  (Year ${(s + 1) ~/ 2})'),
+                                  ))
+                              .toList(),
+                          onChanged: (val) => setState(() => _semester = val),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Batch
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: TextFormField(
+                            controller: _batchCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Batch (optional)',
+                              hintText: 'e.g. 2022-2026',
+                              prefixIcon:
+                                  Icon(Icons.calendar_today_rounded, size: 20),
+                            ),
+                          ),
+                        ),
+
+                        // Section
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: TextFormField(
+                            controller: _sectionCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: const InputDecoration(
+                              labelText: 'Section (optional)',
+                              hintText: 'e.g. A',
+                              prefixIcon: Icon(Icons.group_rounded, size: 20),
+                            ),
+                          ),
+                        ),
                       ],
 
                       // ── Info banner ───────────────────────────────────────────

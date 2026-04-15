@@ -318,6 +318,12 @@ async def submit_activity(
 ):
     form = _get_or_create_form(current_user, db)
 
+    if form.status not in (FormStatus.DRAFT, FormStatus.REJECTED):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot add activities to a form that is already submitted or approved."
+        )
+
     # ── File handling ─────────────────────────────────────────────────────────
     file_path_saved   = None
     original_filename = None
@@ -366,18 +372,18 @@ async def submit_activity(
         # ── Run OCR ───────────────────────────────────────────────────────────
         ocr_text, ocr_status_val, ocr_note = _run_ocr_verify(contents, ext, current_user.name)
 
-        # If OCR fully passes → no mentor needed for document cert activities
+        # If OCR fully passes → it still goes to mentor for final verification
         if ocr_status_val == OCRStatus.VALID:
-            mentor_status_val = MentorStatus.NOT_REQUIRED
+            mentor_status_val = MentorStatus.PENDING
         elif ocr_status_val == OCRStatus.FAILED:
             mentor_status_val = MentorStatus.PENDING  # student must re-upload first
         else:
             mentor_status_val = MentorStatus.PENDING
 
     else:
-        # No file — e.g. GPA update. Mark as auto-verified.
+        # No file — e.g. GPA update. Goes to mentor for verification.
         ocr_status_val    = OCRStatus.VALID
-        mentor_status_val = MentorStatus.NOT_REQUIRED
+        mentor_status_val = MentorStatus.PENDING
         ocr_note          = "No document required for this activity type."
 
     # ── Save activity ─────────────────────────────────────────────────────────
@@ -431,11 +437,6 @@ async def submit_activity(
     db.add(activity)
     db.commit()
     db.refresh(activity)
-
-    # If auto-approved (no doc needed / OCR fully passed) → patch form & score
-    if mentor_status_val == MentorStatus.NOT_REQUIRED:
-        _patch_form_data(activity, db)
-        calculate_and_save(form, db)
 
     return {
         "activity_id":    activity.id,
@@ -498,6 +499,7 @@ def my_activities(
     return {
         "form_id":      form.id,
         "academic_year":form.academic_year,
+        "status":       form.status.value,
         "live_score":   score,
         "total":        total,
         "offset":       offset,
@@ -544,7 +546,10 @@ def mentor_pending_activities(
     """All activities from assigned students that need mentor verification."""
     # Get form IDs assigned to this mentor
     form_ids = [
-        f.id for f in db.query(SSMForm).filter(SSMForm.mentor_id == current_user.id).all()
+        f.id for f in db.query(SSMForm).filter(
+            SSMForm.mentor_id == current_user.id,
+            SSMForm.status == FormStatus.SUBMITTED
+        ).all()
     ]
     if not form_ids:
         return {"total": 0, "items": []}

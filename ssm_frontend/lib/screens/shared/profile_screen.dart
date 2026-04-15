@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
@@ -164,13 +165,23 @@ class _DetailsTabState extends State<_DetailsTab> {
         payload['email'] = _emailCtrl.text.trim();
 
       await ApiService.updateProfile(payload);
-      context.read<AuthProvider>().updateProfileLocally(payload);
+      final auth = context.read<AuthProvider>();
+      auth.updateProfileLocally(payload);
 
       setState(() {
         _saving = false;
         _success = true;
         _message = 'Profile updated successfully!';
       });
+
+      if (auth.mustChangePassword && mounted) {
+        auth.clearMustChangePassword();
+        final role = auth.role ?? 'student';
+        if (role == 'student') context.go('/student/dashboard');
+        else if (role == 'mentor') context.go('/mentor/dashboard');
+        else if (role == 'hod') context.go('/hod/dashboard');
+        else context.go('/admin/dashboard');
+      }
     } on ApiException catch (e) {
       setState(() {
         _saving = false;

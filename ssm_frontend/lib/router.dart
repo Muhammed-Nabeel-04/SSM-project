@@ -33,6 +33,8 @@ import 'screens/admin/admin_settings_screen.dart';
 // Shared
 import 'screens/shared/profile_screen.dart';
 import 'screens/auth/first_setup_screen.dart';
+import 'screens/admin/backend_settings_screen.dart'; // file created below
+import 'core/app_config.dart';
 
 class _AuthNotifierWrapper extends ChangeNotifier {
   _AuthNotifierWrapper(this._auth) {
@@ -64,8 +66,11 @@ GoRouter buildRouter(AuthProvider authProvider) {
       // Coming from splash — redirect to correct destination
       if (isSplash) {
         if (auth.state == AuthState.unauthenticated) return '/login';
-        // Force password change before anything else
-        if (auth.mustChangePassword) return '/profile';
+        // Force password change / first-time setup before anything else
+        if (auth.mustChangePassword) {
+          // Admin: show department setup first; others: show profile/password
+          return auth.role == 'admin' ? '/setup' : '/profile';
+        }
         return switch (auth.role) {
           'student' => '/student/dashboard',
           'mentor' => '/mentor/dashboard',
@@ -110,20 +115,31 @@ GoRouter buildRouter(AuthProvider authProvider) {
         builder: (c, s) => const Scaffold(
           backgroundColor: AppColors.primary,
           body: Center(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.school_rounded, color: Colors.white, size: 64),
-              SizedBox(height: 20),
-              Text('SSM System',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.school_rounded, color: Colors.white, size: 64),
+                SizedBox(height: 20),
+                Text(
+                  'SSM System',
                   style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800)),
-              SizedBox(height: 8),
-              Text('Student Success Matrix',
-                  style: TextStyle(color: Colors.white70, fontSize: 14)),
-              SizedBox(height: 40),
-              CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
-            ]),
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Student Success Matrix',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                SizedBox(height: 40),
+                CircularProgressIndicator(
+                  color: Colors.white54,
+                  strokeWidth: 2,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -175,10 +191,7 @@ GoRouter buildRouter(AuthProvider authProvider) {
       ),
 
       // ── HOD ───────────────────────────────────────────────────────────
-      GoRoute(
-        path: '/hod/dashboard',
-        builder: (c, s) => const HodDashboard(),
-      ),
+      GoRoute(path: '/hod/dashboard', builder: (c, s) => const HodDashboard()),
       GoRoute(
         path: '/hod/approval/:formId',
         builder: (c, s) =>
@@ -210,6 +223,10 @@ GoRouter buildRouter(AuthProvider authProvider) {
         path: '/admin/settings',
         builder: (c, s) => const AdminSettingsScreen(),
       ),
+      GoRoute(
+        path: '/backend-settings',
+        builder: (context, state) => const BackendSettingsScreen(),
+      ),
     ],
   );
 }
@@ -224,23 +241,31 @@ class _ActivityFileViewer extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('View Document')),
       body: Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.picture_as_pdf_rounded,
-              size: 64, color: AppColors.primary),
-          const SizedBox(height: 16),
-          const Text('Open document in browser:',
-              style: TextStyle(color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.open_in_browser_rounded),
-            label: const Text('Open Document'),
-            onPressed: () async {
-              final uri = Uri.parse(url);
-              // ignore: deprecated_member_use
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            },
-          ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.picture_as_pdf_rounded,
+              size: 64,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Open document in browser:',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.open_in_browser_rounded),
+              label: const Text('Open Document'),
+              onPressed: () async {
+                final uri = Uri.parse(url);
+                // ignore: deprecated_member_use
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,132 @@
+🧠 🔄 COMPLETE WORKFLOW (BASED ON YOUR IMAGE)
+🟢 1. STUDENT JOURNEY (TOP FLOW)
+Step 1: Login
+👉 Student logs in using:
+Register Number
+Password
+How to build:
+Create login page (React/HTML)
+Backend API to check user
+Step 2: Fill SSM Form
+👉 Student enters:
+GPA
+Attendance
+Certifications
+Internship
+Projects
+👉 (From your SSM document)
+How to build:
+Create form page
+Store data in database
+Step 3: Upload Proofs
+👉 Student uploads:
+Certificates
+Internship proof
+Project files
+How to build:
+File upload input
+Store in cloud (AWS S3 / Firebase)
+Step 4: Auto Score
+👉 System calculates marks automatically
+Example:
+GPA → 15 marks
+Internship → 20 marks
+How to build:
+Backend function (Node.js)
+Based on SSM rules
+Step 5: View Result
+👉 Student sees:
+Total score
+⭐ Rating
+Breakdown
+Step 6: Submit
+👉 Final submit for approval
+⚙️ 2. BACKEND SYSTEM (MAIN ENGINE)
+👉 This is the brain of your system
+What it does:
+Stores data
+Calculates score
+Manages users
+Handles workflow
+Components (from your diagram):
+🧩 1. User Management
+Students
+Mentors
+HoD
+Admin
+🧩 2. Form & Data Management
+Save student inputs
+Update data
+🧩 3. Auto Scoring Engine
+👉 Core logic:
+Plain text
+If GPA ≥ 9 → +15
+If Internship → +20
+If Certifications ≥ 3 → +15
+🧩 4. Workflow & Approvals
+Plain text
+Student → Mentor → HoD
+🧩 5. Notifications
+Reminder
+Approval updates
+🤖 3. AI VERIFICATION (CERTIFICATES)
+👉 When student uploads certificate:
+What happens:
+Step 1: OCR (Text Read)
+Extract:
+Name
+Course
+Duration
+Step 2: Validation
+Name matches student?
+Duration valid?
+Platform valid?
+Step 3: Result
+✅ Valid
+⚠ Review
+❌ Invalid
+Important:
+👉 AI only helps — mentor decides final
+👨‍🏫 4. APPROVAL PROCESS
+Step 1: Mentor Review
+Check data
+Verify certificates
+Approve / Reject
+Step 2: HoD Approval
+Final check
+Lock score
+Step 3: Final Score
+Student can see final result
+🗄️ 5. DATABASE (DATA STORAGE)
+👉 Stores everything:
+Student details
+Form data
+Scores
+Certificates
+Approval status
+What you need:
+PostgreSQL / MySQL
+☁️ 6. FILE STORAGE (CLOUD)
+👉 Stores:
+Certificates
+Documents
+What you use:
+AWS S3 / Firebase Storage
+🔔 7. AUTOMATION (n8n)
+👉 Used for:
+Reminder emails
+Low score alerts
+Weekly reports
+Example:
+“You didn’t submit form”
+“Your score is low”
+📊 8. DASHBOARDS
+👨‍🎓 Student Dashboard
+Score
+Status
+Suggestions
+👨‍🏫 Mentor Dashboard
+Pending approvals
+🧑‍💼 Admin Dashboard
+Top students
+Analytics

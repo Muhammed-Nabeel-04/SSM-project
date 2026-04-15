@@ -83,7 +83,8 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
               const SizedBox(height: 8),
               const Text(
                 'register_number, name, email, role, phone,\n'
-                'department_name, mentor_register_number',
+                'department_name, mentor_register_number,\n'
+                'semester, year_of_study, batch, section',
                 style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
@@ -97,6 +98,10 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
               _rule('department_name', 'Exact name as created in departments'),
               _rule('mentor_register_number',
                   'Required for students — import mentors first'),
+              _rule('semester', 'Optional — 1 to 8 (students only)'),
+              _rule('year_of_study', 'Optional — 1 to 4 (or auto-calculated from semester)'),
+              _rule('batch', 'Optional — e.g. 2022-2026 (students only)'),
+              _rule('section', 'Optional — e.g. A or B (students only)'),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.all(8),

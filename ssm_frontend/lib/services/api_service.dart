@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 
 import '../config/constants.dart';
 import 'token_service.dart';
+import '../core/app_config.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -24,6 +25,7 @@ class ApiService {
     final token = await TokenService.getToken();
     return {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true', // Added for ngrok
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -49,7 +51,10 @@ class ApiService {
       {bool isStudent = true}) async {
     final res = await http.post(
       _url('/auth/login'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: json.encode({
         if (isStudent) 'register_number': identifier else 'email': identifier,
         'password': password,
@@ -108,29 +113,6 @@ class ApiService {
     return _handle(res);
   }
 
-  static Future<Map<String, dynamic>> createForm(String academicYear) async {
-    final res = await http.post(
-      _url('/student/form/create', {'academic_year': academicYear}),
-      headers: await _authHeaders(),
-    );
-    return _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> getForm(int formId) async {
-    final res = await http.get(_url('/student/form/$formId'),
-        headers: await _authHeaders());
-    return _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> saveForm(
-      int formId, Map<String, dynamic> payload) async {
-    final res = await http.put(
-      _url('/student/form/$formId/save'),
-      headers: await _authHeaders(),
-      body: json.encode(payload),
-    );
-    return _handle(res);
-  }
 
   static Future<Map<String, dynamic>> submitForm(int formId) async {
     final res = await http.post(_url('/student/form/$formId/submit'),
@@ -151,33 +133,6 @@ class ApiService {
     return _handle(res);
   }
 
-  static Future<Map<String, dynamic>> uploadDocument({
-    required int formId,
-    required String category,
-    required String documentType,
-    required File file,
-  }) async {
-    final token = await TokenService.getToken();
-    final request = http.MultipartRequest(
-      'POST',
-      _url('/student/form/$formId/upload', {'category': category}),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.fields['document_type'] = documentType;
-
-    final ext = file.path.split('.').last.toLowerCase();
-    final mimeType = ext == 'pdf' ? 'application/pdf' : 'image/$ext';
-
-    request.files.add(await http.MultipartFile.fromPath(
-      'file',
-      file.path,
-      contentType: MediaType.parse(mimeType),
-    ));
-
-    final streamed = await request.send();
-    final res = await http.Response.fromStream(streamed);
-    return _handle(res);
-  }
 
   // ─── ACTIVITIES ───────────────────────────────────────────
 

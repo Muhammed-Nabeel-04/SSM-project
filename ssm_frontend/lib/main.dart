@@ -7,11 +7,11 @@ import 'router.dart' show buildRouter;
 import 'services/auth_provider.dart';
 import 'services/api_service.dart';
 import 'widgets/offline_wrapper.dart';
+import 'core/app_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Placeholder for your crash handler logic
-  setupCrashHandlers();
+  await AppConfig.init(); // Add this line
   runApp(const SSMApp());
 }
 
@@ -34,11 +34,13 @@ class SSMApp extends StatelessWidget {
             final auth = AuthProvider()..checkSession();
 
             // Fetch system settings to sync academic year globally
-            ApiService.getSystemSettings().then((data) {
-              if (data != null && data['academic_year'] != null) {
-                AppStrings.academicYear = data['academic_year'];
-              }
-            }).catchError((_) {});
+            ApiService.getSystemSettings()
+                .then((data) {
+                  if (data != null && data['academic_year'] != null) {
+                    AppStrings.academicYear = data['academic_year'];
+                  }
+                })
+                .catchError((_) {});
 
             return auth;
           },
@@ -81,8 +83,9 @@ class SSMApp extends StatelessWidget {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
@@ -101,8 +104,10 @@ class SSMApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }

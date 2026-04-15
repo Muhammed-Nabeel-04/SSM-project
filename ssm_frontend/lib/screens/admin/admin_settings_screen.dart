@@ -170,7 +170,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     setState(() => _promoting = true);
     try {
       final result = await ApiService.promoteStudents();
-      final summary = result['summary'] as Map;
+      final summary = result['summary'] as Map<String, dynamic>;
       if (mounted) {
         showDialog(
           context: context,

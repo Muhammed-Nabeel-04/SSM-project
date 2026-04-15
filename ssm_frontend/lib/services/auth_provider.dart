@@ -114,6 +114,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _fetchProfile() async {
     try {
       _profile = await ApiService.getMe();
+      profileNotifier.value = _profile; // ← notify listeners so ProfileScreen updates
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         // Try refresh token first before logging out
@@ -122,12 +123,14 @@ class AuthProvider extends ChangeNotifier {
           // Retry profile fetch with new token
           try {
             _profile = await ApiService.getMe();
+            profileNotifier.value = _profile; // ← update after retry too
           } catch (_) {}
         } else {
           // Refresh failed — session truly expired, logout silently
           _state = AuthState.unauthenticated;
           _role = null;
           _profile = null;
+          profileNotifier.value = null;
           await TokenService.clearSession();
           notifyListeners();
         }
@@ -140,8 +143,17 @@ class AuthProvider extends ChangeNotifier {
   void updateProfileLocally(Map<String, dynamic> updates) {
     if (_profile != null) {
       _profile = {..._profile!, ...updates};
+      profileNotifier.value = _profile; // keep notifier in sync
       // Silent update — no router re-eval needed
     }
+  }
+
+  /// Call this after student/mentor completes their first-login profile setup
+  /// (or after admin saves departments). Clears the mustChangePassword flag
+  /// so the router no longer redirects to /profile or /setup.
+  void clearMustChangePassword() {
+    mustChangePassword = false;
+    notifyListeners();
   }
 
   // ─── LOGOUT ───────────────────────────────────────────────

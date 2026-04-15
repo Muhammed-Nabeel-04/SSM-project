@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
 
 class FirstSetupScreen extends StatefulWidget {
@@ -64,7 +66,11 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
     }
     if (_depts.isEmpty) {
       // Already has departments — just go to dashboard
-      if (mounted) context.go('/admin/dashboard');
+      // Clear mustChangePassword so admin isn't redirected here again
+      if (mounted) {
+        context.read<AuthProvider>().clearMustChangePassword();
+        context.go('/admin/dashboard');
+      }
       return;
     }
 
@@ -78,6 +84,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         await ApiService.createDepartment(d['name']!, d['code']!);
       }
       if (mounted) {
+        // Clear mustChangePassword so admin isn't bounced back here
+        context.read<AuthProvider>().clearMustChangePassword();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Departments saved!'),
           backgroundColor: AppColors.success,

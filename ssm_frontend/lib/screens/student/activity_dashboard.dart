@@ -53,6 +53,9 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
     final activities = (_data?['activities'] as List?) ?? [];
     final score = _data?['live_score'] as Map?;
 
+    final String status = _data?['status'] as String? ?? 'draft';
+    final bool canEdit = (status == 'draft' || status == 'rejected');
+
     final filtered = _filterCategory == 'all'
         ? activities
         : activities.where((a) {
@@ -114,6 +117,47 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                     // ── LIVE SCORE CARD ───────────────────────────────────
                     SliverToBoxAdapter(child: _ScoreCard(score: score)),
 
+                    // ── SUBMIT FORM BANNER ──────────────────────────────────
+                    if (canEdit && activities.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            icon: const Icon(Icons.send_rounded),
+                            label: const Text('Finalize & Submit Form to Mentor',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            onPressed: _submitForm,
+                          ),
+                        ),
+                      ),
+                    if (!canEdit)
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.lock_rounded, color: AppColors.success, size: 18),
+                              SizedBox(width: 8),
+                              Text('Form submitted and locked for review',
+                                  style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
                     // ── CATEGORY FILTER ───────────────────────────────────
                     SliverToBoxAdapter(
                         child: _CategoryFilter(
@@ -150,8 +194,8 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) => _ActivityCard(
                               activity: filtered[i],
-                              onDelete: () =>
-                                  _deleteActivity(filtered[i]['id']),
+                              onDelete: canEdit ? () =>
+                                  _deleteActivity(filtered[i]['id']) : null,
                             ),
                             childCount: filtered.length,
                           ),
@@ -159,7 +203,7 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                       ),
                   ]),
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: canEdit ? FloatingActionButton.extended(
         onPressed: () async {
           final added = await context.push<bool>('/student/add-activity');
           if (added == true) _load();
@@ -168,7 +212,7 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Activity',
             style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      ) : null,
     );
   }
 
@@ -198,6 +242,34 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
     } on ApiException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    }
+  }
+
+  Future<void> _submitForm() async {
+    final formId = _data?['form_id'] as int?;
+    if (formId == null) return;
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Submit Form?'),
+        content: const Text('Once submitted, you cannot add or delete activities until the mentor completes their final academic review. Do you want to proceed?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold))),
+        ],
+      )
+    );
+    if (confirm != true || !mounted) return;
+    
+    try {
+      await ApiService.submitForm(formId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form successfully submitted to Mentor!'), backgroundColor: AppColors.success));
+      _load();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
   }
 
