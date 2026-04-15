@@ -20,8 +20,8 @@ class AppConfig {
 
   // --- Getters & Setters ---
   static String get backendUrl {
-    // Returns the saved URL, or the default if nothing is saved yet
-    return _prefs.getString(_keyBackendUrl) ?? _defaultUrl;
+    // Force the explicit URL completely ignoring any ghost saved SharedPreferences states.
+    return _defaultUrl;
   }
 
   static Future<void> setBackendUrl(String url) async {

@@ -73,7 +73,7 @@ app.include_router(academic_router)
 @app.on_event("startup")
 def on_startup():
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    create_tables()
+    # create_tables()  # Disabled in production to prevent Supabase Transaction Pooler freeze
     logger.info(f"{settings.APP_NAME} started — ENV: {settings.APP_ENV}")
     print(f"✅  {settings.APP_NAME} started — ENV: {settings.APP_ENV}")
 
