@@ -421,8 +421,8 @@ class _CategoryFilter extends StatelessWidget {
 
 class _ActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
-  final VoidCallback onDelete;
-  const _ActivityCard({required this.activity, required this.onDelete});
+  final VoidCallback? onDelete;
+  const _ActivityCard({required this.activity, this.onDelete});
 
   @override
   Widget build(BuildContext context) {

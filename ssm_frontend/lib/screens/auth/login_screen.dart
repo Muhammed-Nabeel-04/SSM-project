@@ -60,18 +60,18 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BackendSettingsScreen(),
-                ),
-              );
-            },
-            tooltip: 'Backend Settings',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.settings_outlined, color: Colors.white),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (context) => BackendSettingsScreen(),
+          //       ),
+          //     );
+          //   },
+          //   tooltip: 'Backend Settings',
+          // ),
         ],
       ),
       body: SafeArea(
