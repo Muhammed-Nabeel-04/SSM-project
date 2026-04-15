@@ -38,10 +38,6 @@ class Settings(BaseSettings):
             # SQLAlchemy needs postgresql://, not postgres://
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
-            # Add pgbouncer flag for Supabase Transaction Pooler (port 6543)
-            if "6543" in url and "pgbouncer" not in url:
-                separator = "&" if "?" in url else "?"
-                url = f"{url}{separator}pgbouncer=true"
             return url
         # Local dev fallback
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
