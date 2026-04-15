@@ -81,3 +81,17 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"status": "ok", "app": settings.APP_NAME}
+
+
+@app.get("/db-test")
+def db_test():
+    """Temporary debug endpoint — tests raw DB connection and returns error details."""
+    import traceback
+    from database import engine
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+            row = result.fetchone()
+        return {"status": "db_ok", "result": str(row), "db_url_prefix": settings.db_url[:40]}
+    except Exception as e:
+        return {"status": "db_error", "error": str(e), "trace": traceback.format_exc()}
