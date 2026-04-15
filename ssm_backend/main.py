@@ -24,7 +24,7 @@ logging.basicConfig(
     format  = "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     handlers= [
         logging.StreamHandler(),
-        logging.FileHandler("ssm_app.log", encoding="utf-8"),
+        # NOTE: FileHandler removed — Railway filesystem is ephemeral (files wiped on redeploy)
     ]
 )
 logger = logging.getLogger("ssm")
@@ -51,8 +51,8 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = settings.origins_list,
-    allow_credentials = True,
+    allow_origins     = ["*"],   # Mobile app — no fixed origin
+    allow_credentials = False,   # Must be False when allow_origins=["*"]
     allow_methods     = ["GET", "POST", "PUT", "DELETE"],
     allow_headers     = ["Authorization", "Content-Type"],
 )
@@ -81,17 +81,3 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"status": "ok", "app": settings.APP_NAME}
-
-
-@app.get("/db-test")
-def db_test():
-    """Temporary debug endpoint — tests raw DB connection and returns error details."""
-    import traceback
-    from database import engine
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-            row = result.fetchone()
-        return {"status": "db_ok", "result": str(row), "db_url_prefix": settings.db_url[:40]}
-    except Exception as e:
-        return {"status": "db_error", "error": str(e), "trace": traceback.format_exc()}

@@ -27,52 +27,45 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    import traceback
-    from fastapi.responses import JSONResponse
-    try:
-        # Students login with register_number, others with email
-        if payload.register_number:
-            user = db.query(User).filter(
-                User.register_number == payload.register_number,
-                User.role == UserRole.STUDENT,
-                User.is_active == True
-            ).first()
-            error_msg = "Invalid register number or password"
-        elif payload.email:
-            user = db.query(User).filter(
-                User.email == payload.email,
-                User.role.in_([UserRole.MENTOR, UserRole.HOD, UserRole.ADMIN]),
-                User.is_active == True
-            ).first()
-            error_msg = "Invalid email or password"
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Provide register_number (student) or email (staff)",
-            )
-
-        if not user or not verify_password(payload.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=error_msg,
-            )
-
-        token = create_access_token(user.id, user.role.value, user.department_id)
-        _, refresh_tok = create_session(db, user, token, request)
-
-        return TokenResponse(
-            access_token  = token,
-            refresh_token = refresh_tok,
-            role          = user.role.value,
-            user_id       = user.id,
-            name          = user.name,
-            department_id = user.department_id,
-            must_change_password = user.must_change_password,
+    # Students login with register_number, others with email
+    if payload.register_number:
+        user = db.query(User).filter(
+            User.register_number == payload.register_number,
+            User.role == UserRole.STUDENT,
+            User.is_active == True
+        ).first()
+        error_msg = "Invalid register number or password"
+    elif payload.email:
+        user = db.query(User).filter(
+            User.email == payload.email,
+            User.role.in_([UserRole.MENTOR, UserRole.HOD, UserRole.ADMIN]),
+            User.is_active == True
+        ).first()
+        error_msg = "Invalid email or password"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide register_number (student) or email (staff)",
         )
-    except HTTPException:
-        raise
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"login_crash": str(e), "trace": traceback.format_exc()})
+
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=error_msg,
+        )
+
+    token = create_access_token(user.id, user.role.value, user.department_id)
+    _, refresh_tok = create_session(db, user, token, request)
+
+    return TokenResponse(
+        access_token  = token,
+        refresh_token = refresh_tok,
+        role          = user.role.value,
+        user_id       = user.id,
+        name          = user.name,
+        department_id = user.department_id,
+        must_change_password = user.must_change_password,
+    )
 
 
 # ─── TOKEN REFRESH ────────────────────────────────────────────────────────────
