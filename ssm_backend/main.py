@@ -5,7 +5,6 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from sqlalchemy import inspect  # Added for DB check
 import os
 import sys
 import logging
@@ -78,17 +77,28 @@ app.include_router(notifications_router)
 def on_startup():
     # 1. Ensure Upload Directory exists
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    
-    # 2. Verify critical tables exist; crash loudly if not
-    # This prevents the app from running if migrations were skipped
-    insp = inspect(engine)
-    required = ["users", "user_sessions", "system_settings", "notifications"]
-    missing = [t for t in required if not insp.has_table(t)]
-    
-    if missing:
-        error_msg = f"❌ MISSING DB TABLES — run 'alembic upgrade head': {missing}"
-        logger.error(error_msg)
-        raise RuntimeError(error_msg)
+
+    # 2. Lightweight DB connectivity check (avoids blocking inspect() on Supabase pooler)
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            missing = []
+            required = ["users", "user_sessions", "system_settings", "notifications"]
+            for table in required:
+                result = conn.execute(
+                    text("SELECT to_regclass(:t)"), {"t": table}
+                ).scalar()
+                if result is None:
+                    missing.append(table)
+        if missing:
+            error_msg = f"❌ MISSING DB TABLES — run 'alembic upgrade head': {missing}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+    except RuntimeError:
+        raise
+    except Exception as e:
+        # Log but don't crash — let Railway health check catch real DB issues
+        logger.warning(f"⚠️ DB startup check failed (non-fatal): {e}")
 
     # 3. Log Success
     logger.info(f"✅ {settings.APP_NAME} started — ENV: {settings.APP_ENV}")
