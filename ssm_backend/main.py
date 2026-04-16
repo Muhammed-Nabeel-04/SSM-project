@@ -5,32 +5,33 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy import inspect  # Added for DB check
 import os
 import sys
+import logging
 
 # Ensure this folder is prioritized in Python's memory to fix Railway ModuleNotFoundErrors
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
-from database import create_tables
+from database import engine, create_tables  # Added engine for inspection
 from routers import auth, student, mentor, hod, admin
 from routers.files import router as files_router
 from routers.activity import router as activity_router
 from routers.settings import router as academic_router
 from routers.notifications import router as notifications_router
 import models.notification  # ensure table is picked up by Alembic/Base
-import logging
+
+# ─── LOGGING ──────────────────────────────────────────────────────────────────
 
 logging.basicConfig(
     level   = logging.INFO if not settings.is_production else logging.WARNING,
     format  = "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     handlers= [
         logging.StreamHandler(),
-        # NOTE: FileHandler removed — Railway filesystem is ephemeral (files wiped on redeploy)
     ]
 )
 logger = logging.getLogger("ssm")
-
 
 # ─── RATE LIMITER ─────────────────────────────────────────────────────────────
 
@@ -75,10 +76,23 @@ app.include_router(notifications_router)
 
 @app.on_event("startup")
 def on_startup():
+    # 1. Ensure Upload Directory exists
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    # create_tables()  # Disabled in production to prevent Supabase Transaction Pooler freeze
-    logger.info(f"{settings.APP_NAME} started — ENV: {settings.APP_ENV}")
-    print(f"✅  {settings.APP_NAME} started — ENV: {settings.APP_ENV}")
+    
+    # 2. Verify critical tables exist; crash loudly if not
+    # This prevents the app from running if migrations were skipped
+    insp = inspect(engine)
+    required = ["users", "user_sessions", "system_settings", "notifications"]
+    missing = [t for t in required if not insp.has_table(t)]
+    
+    if missing:
+        error_msg = f"❌ MISSING DB TABLES — run 'alembic upgrade head': {missing}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    # 3. Log Success
+    logger.info(f"✅ {settings.APP_NAME} started — ENV: {settings.APP_ENV}")
+    print(f"✅ {settings.APP_NAME} started — ENV: {settings.APP_ENV}")
 
 
 @app.get("/health")

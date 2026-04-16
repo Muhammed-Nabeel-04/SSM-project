@@ -14,14 +14,15 @@ class LoginRequest(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    access_token:  str
-    refresh_token: str                  # ← NEW: long-lived refresh token
-    token_type:    str = "bearer"
-    role:          str
-    user_id:       int
-    name:          str
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+    role: str
+    user_id: int
+    name: str
     department_id: Optional[int] = None
     must_change_password: bool = False
+    requires_2fa: bool = False
 
 
 class RefreshTokenRequest(BaseModel):  # ← NEW

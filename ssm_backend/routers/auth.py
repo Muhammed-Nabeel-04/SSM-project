@@ -60,7 +60,6 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     if getattr(user, 'is_2fa_enabled', False):
         return {
             "requires_2fa": True,
-            "user_id": user.id,
             "access_token": None,
             "refresh_token": None,
             "role": user.role.value,
