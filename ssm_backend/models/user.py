@@ -22,6 +22,7 @@ class Department(Base):
     name       = Column(String(100), nullable=False)
     code       = Column(String(20),  unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
 
     users = relationship("User", back_populates="department")
 
@@ -39,8 +40,11 @@ class User(Base):
     mentor_id       = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_active       = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
+    is_2fa_enabled  = Column(Boolean, default=False)
+    totp_secret     = Column(String(64), nullable=True)   # base32 secret for TOTP
     created_at      = Column(DateTime, default=datetime.utcnow)
     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at      = Column(DateTime, nullable=True)
 
     # ── Student profile fields (nullable — filled after first login) ──────────
     phone        = Column(String(15),  nullable=True)   # e.g. 9876543210

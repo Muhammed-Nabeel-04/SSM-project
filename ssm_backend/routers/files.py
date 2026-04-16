@@ -55,14 +55,17 @@ def download_document(
     # ADMIN: no restriction
 
     # ── Serve file ────────────────────────────────────────────────────────────
-    if not os.path.exists(doc.file_path):
-        raise HTTPException(status_code=404, detail="File not found on disk")
-
-    return FileResponse(
-        path         = doc.file_path,
-        filename     = doc.original_filename,
-        media_type   = _media_type(doc.file_path),
-    )
+    from services.storage import storage_service
+    from fastapi.responses import RedirectResponse
+    
+    if not storage_service.enabled:
+        raise HTTPException(status_code=500, detail="Supabase Storage is not configured.")
+        
+    try:
+        public_url = storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(doc.file_path)
+        return RedirectResponse(public_url)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"File not found in cloud storage: {str(e)}")
 
 
 def _media_type(path: str) -> str:

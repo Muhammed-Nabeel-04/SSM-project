@@ -1,6 +1,7 @@
 import csv
 import io
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+import uuid as uuid_lib
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -21,7 +22,10 @@ def create_department(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    existing = db.query(Department).filter(Department.code == payload.code).first()
+    existing = db.query(Department).filter(
+        Department.code == payload.code,
+        Department.deleted_at.is_(None)
+    ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Department code already exists")
     dept = Department(name=payload.name, code=payload.code)
@@ -33,14 +37,14 @@ def create_department(
 
 @router.get("/departments")
 def list_departments(db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    depts = db.query(Department).all()
+    depts = db.query(Department).filter(Department.deleted_at.is_(None)).all()
     return [{"id": d.id, "name": d.name, "code": d.code} for d in depts]
 
 
 @router.get("/departments/count")
 def department_count(db: Session = Depends(get_db), _: User = Depends(require_admin)):
     """Used by app to decide whether to show first-login setup screen."""
-    count = db.query(Department).count()
+    count = db.query(Department).filter(Department.deleted_at.is_(None)).count()
     return {"count": count}
 
 
@@ -50,18 +54,23 @@ def delete_department(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    count = db.query(User).filter(User.department_id == dept_id).count()
+    count = db.query(User).filter(
+        User.department_id == dept_id,
+        User.deleted_at.is_(None)
+    ).count()
     if count > 0:
         raise HTTPException(
             status_code=400,
             detail=f"Cannot delete: {count} users are still assigned to this department.",
         )
     dept = db.query(Department).filter(Department.id == dept_id).first()
-    if not dept:
+    if not dept or dept.deleted_at:
         raise HTTPException(status_code=404, detail="Department not found")
-    db.delete(dept)
+        
+    from datetime import datetime
+    dept.deleted_at = datetime.utcnow()
     db.commit()
-    return {"message": "Department deleted"}
+    return {"message": "Department soft-deleted"}
 
 
 # ─── USER MANAGEMENT ──────────────────────────────────────────────────────────
@@ -76,7 +85,7 @@ def list_users(
     db: Session = Depends(get_db),
     _:  User    = Depends(require_admin),
 ):
-    query = db.query(User)
+    query = db.query(User).filter(User.deleted_at.is_(None))
     if role:          query = query.filter(User.role == role)
     if department_id: query = query.filter(User.department_id == department_id)
     if is_active is not None: query = query.filter(User.is_active == is_active)
@@ -120,6 +129,7 @@ def list_mentors(
     query = db.query(User).filter(
         User.role == UserRole.MENTOR,
         User.is_active == True,
+        User.deleted_at.is_(None)
     )
     if department_id:
         query = query.filter(User.department_id == department_id)
@@ -153,11 +163,17 @@ def assign_mentor(
     _:  User    = Depends(require_admin),
 ):
     student = db.query(User).filter(
-        User.id == user_id, User.role == UserRole.STUDENT).first()
+        User.id == user_id, 
+        User.role == UserRole.STUDENT,
+        User.deleted_at.is_(None)
+    ).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     mentor = db.query(User).filter(
-        User.id == mentor_id, User.role == UserRole.MENTOR).first()
+        User.id == mentor_id, 
+        User.role == UserRole.MENTOR,
+        User.deleted_at.is_(None)
+    ).first()
     if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
 
@@ -172,70 +188,44 @@ def assign_mentor(
 
 # ─── BULK CSV IMPORT ──────────────────────────────────────────────────────────
 
-@router.post("/users/import")
-async def bulk_import_users(
-    file: UploadFile = File(...),
-    db:   Session    = Depends(get_db),
-    _:    User       = Depends(require_admin),
-):
-    """
-    CSV columns (header required):
-      register_number, name, email, role, phone,
-      department_name, mentor_register_number (students only)
+# In-memory store for background import job status
+# { job_id: { "status": "running"|"done", "result": {...} } }
+_import_jobs: dict = {}
 
-    password column NOT needed — defaults to phone number.
-    role values: student | mentor | hod | admin
-    """
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are accepted")
 
-    contents = await file.read()
-    if len(contents) > 2 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="CSV file size exceeds 2 MB limit")
-    try:
-        text = contents.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="CSV must be UTF-8 encoded")
+def _run_csv_import(job_id: str, text: str, db_url: str):
+    """Background task: processes the CSV and updates _import_jobs[job_id]."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import NullPool
+
+    engine = create_engine(db_url, poolclass=NullPool)
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
 
     reader = csv.DictReader(io.StringIO(text))
-
-    required_cols = {"register_number", "name", "email", "role", "phone"}
-    # Optional columns: department_name, mentor_register_number,
-    #                   semester, year_of_study, batch, section
-    if not required_cols.issubset(set(reader.fieldnames or [])):
-        missing = required_cols - set(reader.fieldnames or [])
-        raise HTTPException(status_code=400,
-                            detail=f"Missing CSV columns: {missing}")
-
-    # Pre-load all departments and mentors for fast lookup
-    dept_map    = {d.name.lower(): d.id
-                   for d in db.query(Department).all()}
-    mentor_map  = {u.register_number: u.id
-                   for u in db.query(User).filter(
-                       User.role == UserRole.MENTOR).all()}
+    dept_map   = {d.name.lower(): d.id for d in db.query(Department).all()}
+    mentor_map = {u.register_number: u.id for u in db.query(User).filter(User.role == UserRole.MENTOR).all()}
 
     created, skipped, failed = [], [], []
 
     for row_num, row in enumerate(reader, start=2):
-        reg      = row.get("register_number", "").strip()
-        name     = row.get("name",            "").strip()
-        email    = row.get("email",           "").strip()
-        phone    = row.get("phone",           "").strip()
-        role_str = row.get("role",            "").strip().lower()
-        dept_name= row.get("department_name", "").strip()
-        mentor_rn= row.get("mentor_register_number", "").strip()
+        reg       = row.get("register_number", "").strip()
+        name      = row.get("name",            "").strip()
+        email     = row.get("email",           "").strip()
+        phone     = row.get("phone",           "").strip()
+        role_str  = row.get("role",            "").strip().lower()
+        dept_name = row.get("department_name", "").strip()
+        mentor_rn = row.get("mentor_register_number", "").strip()
 
-        # ── Validate required ─────────────────────────────────────────────
         if not all([reg, name, email, role_str, phone]):
             failed.append({"row": row_num, "register_number": reg,
-                           "reason": "Missing required field (register_number/name/email/role/phone)"})
+                           "reason": "Missing required field"})
             continue
-
         if len(phone) < 8:
             failed.append({"row": row_num, "register_number": reg,
-                           "reason": "Phone must be at least 8 digits (used as default password)"})
+                           "reason": "Phone must be ≥ 8 digits"})
             continue
-
         try:
             role = UserRole(role_str)
         except ValueError:
@@ -243,7 +233,6 @@ async def bulk_import_users(
                            "reason": f"Invalid role '{role_str}'"})
             continue
 
-        # ── Resolve department ─────────────────────────────────────────────
         dept_id = None
         if dept_name:
             dept_id = dept_map.get(dept_name.lower())
@@ -256,7 +245,6 @@ async def bulk_import_users(
                            "reason": "department_name required for non-admin users"})
             continue
 
-        # ── Resolve mentor (students only) ─────────────────────────────────
         mentor_id = None
         if role == UserRole.STUDENT:
             if not mentor_rn:
@@ -269,24 +257,19 @@ async def bulk_import_users(
                                "reason": f"Mentor '{mentor_rn}' not found — import mentors first"})
                 continue
 
-        # ── Duplicate check ────────────────────────────────────────────────
         existing = db.query(User).filter(
             (User.register_number == reg) | (User.email == email)
         ).first()
         if existing:
-            skipped.append({"row": row_num, "register_number": reg,
-                            "reason": "Already exists"})
+            skipped.append({"row": row_num, "register_number": reg, "reason": "Already exists"})
             continue
 
-        # ── Create ────────────────────────────────────────────────────────
         try:
             semester      = int(row.get("semester",      "").strip()) if row.get("semester",      "").strip().isdigit() else None
             year_of_study = int(row.get("year_of_study", "").strip()) if row.get("year_of_study", "").strip().isdigit() else None
             batch         = row.get("batch",   "").strip() or None
             section       = row.get("section", "").strip() or None
 
-            # NOTE: db.begin_nested() (savepoints) is NOT supported by PgBouncer
-            # transaction mode. Use plain add + flush instead.
             user = User(
                 register_number      = reg,
                 name                 = name,
@@ -303,7 +286,7 @@ async def bulk_import_users(
                 must_change_password = True,
             )
             db.add(user)
-            db.flush()  # detect constraint violations early, before full commit
+            db.flush()
             created.append({"row": row_num, "register_number": reg, "name": name})
         except Exception as e:
             db.rollback()

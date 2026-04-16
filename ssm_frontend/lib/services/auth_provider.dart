@@ -14,6 +14,13 @@ class AuthProvider extends ChangeNotifier {
   bool _loading = false;
   bool mustChangePassword = false;
 
+  // ── 2FA pending state ──
+  bool requires2FA = false;
+  int? pendingTwoFactorUserId;
+  String? pendingTwoFactorUserName;
+  String? pendingTwoFactorRole;
+  int? pendingTwoFactorDeptId;
+
   // Full profile — populated after login via /auth/me
   Map<String, dynamic>? _profile;
 
@@ -52,11 +59,25 @@ class AuthProvider extends ChangeNotifier {
       {bool isStudent = true}) async {
     _loading = true;
     _errorMessage = null;
+    requires2FA = false;
     notifyListeners();
 
     try {
       final data =
           await ApiService.login(identifier, password, isStudent: isStudent);
+
+      // ── 2FA check ─────────────────────────────────────────────
+      if (data['requires_2fa'] == true) {
+        requires2FA = true;
+        pendingTwoFactorUserId = data['user_id'];
+        pendingTwoFactorUserName = data['name'];
+        pendingTwoFactorRole = data['role'];
+        pendingTwoFactorDeptId = data['department_id'];
+        _loading = false;
+        notifyListeners();
+        return false; // caller will push TwoFactorLoginScreen
+      }
+
       await TokenService.saveSession(
         token: data['access_token'],
         refreshToken: data['refresh_token'] ?? '',
@@ -83,6 +104,46 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       _errorMessage = 'Connection failed. Please try again.';
+      _loading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ─── 2FA SECOND STEP ──────────────────────────────────────
+  Future<bool> loginWith2FA({required int userId, required String code}) async {
+    _loading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final data = await ApiService.loginWith2FA(userId: userId, code: code);
+      await TokenService.saveSession(
+        token: data['access_token'],
+        refreshToken: data['refresh_token'] ?? '',
+        role: data['role'],
+        userId: data['user_id'],
+        name: data['name'],
+        deptId: data['department_id'],
+      );
+      _role = data['role'];
+      _name = data['name'];
+      _userId = data['user_id'];
+      _deptId = data['department_id'];
+      mustChangePassword = data['must_change_password'] ?? false;
+      requires2FA = false;
+      pendingTwoFactorUserId = null;
+      _state = AuthState.authenticated;
+      _loading = false;
+      notifyListeners();
+      _fetchProfile();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _loading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Verification failed. Please try again.';
       _loading = false;
       notifyListeners();
       return false;

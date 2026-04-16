@@ -6,6 +6,7 @@ import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import '../auth/two_factor_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,7 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _tab = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().reloadProfile();
     });
@@ -55,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             Tab(
                 text: 'Password',
                 icon: Icon(Icons.lock_outline_rounded, size: 18)),
+            Tab(text: 'Security', icon: Icon(Icons.shield_outlined, size: 18)),
           ],
         ),
       ),
@@ -67,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 profile: profile ?? auth.profile, role: auth.role ?? ''),
           ),
           const _PasswordTab(),
+          const _SecurityTab(),
         ],
       ),
     );
@@ -177,10 +180,14 @@ class _DetailsTabState extends State<_DetailsTab> {
       if (auth.mustChangePassword && mounted) {
         auth.clearMustChangePassword();
         final role = auth.role ?? 'student';
-        if (role == 'student') context.go('/student/dashboard');
-        else if (role == 'mentor') context.go('/mentor/dashboard');
-        else if (role == 'hod') context.go('/hod/dashboard');
-        else context.go('/admin/dashboard');
+        if (role == 'student')
+          context.go('/student/dashboard');
+        else if (role == 'mentor')
+          context.go('/mentor/dashboard');
+        else if (role == 'hod')
+          context.go('/hod/dashboard');
+        else
+          context.go('/admin/dashboard');
       }
     } on ApiException catch (e) {
       setState(() {
@@ -574,6 +581,98 @@ class _RoleBadge extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// ─── SECURITY TAB ────────────────────────────────────────────────────────────
+
+class _SecurityTab extends StatelessWidget {
+  const _SecurityTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = context.watch<AuthProvider>().profile;
+    final is2FAEnabled = profile?['is_2fa_enabled'] == true;
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // Section header
+        const Text('Account Security',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary)),
+        const SizedBox(height: 4),
+        const Text('Protect your account with an extra layer of verification.',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        const SizedBox(height: 20),
+
+        // 2FA card
+        InkWell(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const TwoFactorScreen()),
+          ),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: is2FAEnabled
+                    ? const Color(0xFF06D6A0).withOpacity(0.4)
+                    : AppColors.border,
+              ),
+            ),
+            child: Row(children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color:
+                      (is2FAEnabled ? const Color(0xFF06D6A0) : Colors.orange)
+                          .withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  is2FAEnabled
+                      ? Icons.verified_user_rounded
+                      : Icons.security_rounded,
+                  color: is2FAEnabled ? const Color(0xFF06D6A0) : Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Two-Factor Authentication (2FA)',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: AppColors.textPrimary)),
+                    const SizedBox(height: 3),
+                    Text(
+                      is2FAEnabled
+                          ? 'Active — your account is secured'
+                          : 'Inactive — tap to enable',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: is2FAEnabled
+                            ? const Color(0xFF06D6A0)
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textLight),
+            ]),
+          ),
+        ),
+      ],
     );
   }
 }

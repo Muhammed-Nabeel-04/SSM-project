@@ -10,6 +10,7 @@ import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import '../../widgets/notification_bell.dart';
 
 class HodDashboard extends StatefulWidget {
   const HodDashboard({super.key});
@@ -55,6 +56,7 @@ class _HodDashboardState extends State<HodDashboard> {
               style: const TextStyle(fontSize: 12, color: Colors.white70)),
         ]),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             tooltip: 'Profile',
@@ -73,10 +75,13 @@ class _HodDashboardState extends State<HodDashboard> {
                   title: const Text('Logout'),
                   content: const Text('Are you sure you want to logout?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel')),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                      child: const Text('Logout',
+                          style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),

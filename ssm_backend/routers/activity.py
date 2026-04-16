@@ -36,6 +36,7 @@ from models.ssm import (
 )
 from services.security import get_current_user, require_mentor, require_student
 from services.scoring import calculate_and_save
+from services.notifications import push_notification
 
 router = APIRouter(prefix="/activity", tags=["Activities"])
 
@@ -339,33 +340,21 @@ async def submit_activity(
 
         if size_kb > MAX_FILE_MB * 1024:
             raise HTTPException(status_code=400, detail=f"File too large. Max {MAX_FILE_MB} MB.")
-        
-        # ── Per-user storage cap (50 MB total) ───────────────────────────
-        user_upload_dir = os.path.join(settings.UPLOAD_DIR, str(current_user.id))
-        if os.path.exists(user_upload_dir):
-            total_kb = sum(
-                os.path.getsize(os.path.join(dirpath, f)) // 1024
-                for dirpath, _, files in os.walk(user_upload_dir)
-                for f in files
-            )
-            if total_kb > 50 * 1024:  # 50 MB cap per student
-                raise HTTPException(
-                    status_code=400,
-                    detail="Storage limit reached (50 MB). Delete old activities to upload more."
-                )
 
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in {".pdf", ".jpg", ".jpeg", ".png"}:
             raise HTTPException(status_code=400, detail="Only PDF, JPG, PNG allowed.")
 
-        folder = os.path.join(settings.UPLOAD_DIR, str(current_user.id), str(form.id), "activities")
-        os.makedirs(folder, exist_ok=True)
-        unique_name = f"{uuid.uuid4().hex}{ext}"
-        file_path_saved = os.path.join(folder, unique_name)
+        unique_name = f"activities/{current_user.id}/{form.id}/{uuid.uuid4().hex}{ext}"
 
-        with open(file_path_saved, "wb") as f:
-            f.write(contents)
+        from services.storage import storage_service
+        try:
+            # We assume content_type is available via file.content_type
+            storage_service.upload_file(contents, unique_name, file.content_type or "application/octet-stream")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cloud upload failed: {str(e)}")
 
+        file_path_saved   = unique_name
         file_size_kb      = size_kb
         original_filename = file.filename
 
@@ -591,6 +580,15 @@ def approve_activity(
     form = act.form
     score_row, _ = calculate_and_save(form, db)
 
+    # Notify student
+    push_notification(
+        db, act.student_id,
+        title="Activity Approved ✅",
+        body=f'Your activity "{act.title}" has been approved by your mentor.',
+        icon="check",
+    )
+    db.commit()
+
     return {
         "message":     "Activity approved. Score updated.",
         "grand_total": score_row.grand_total,
@@ -612,6 +610,15 @@ def reject_activity(
     act.mentor_status = MentorStatus.REJECTED
     act.mentor_note   = note
     act.verified_at   = datetime.utcnow()
+    db.commit()
+
+    # Notify student
+    push_notification(
+        db, act.student_id,
+        title="Activity Returned ⚠️",
+        body=f'Your activity "{act.title}" was returned: {note}',
+        icon="warning",
+    )
     db.commit()
 
     return {"message": "Activity rejected. Student will be notified."}

@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     UPLOAD_DIR    : str = "uploads"
     MAX_FILE_SIZE_MB: int = 5
 
+    # Supabase (for File Storage)
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost"
 

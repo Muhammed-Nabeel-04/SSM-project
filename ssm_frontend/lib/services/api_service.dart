@@ -428,4 +428,93 @@ class ApiService {
         headers: await _authHeaders());
     return _handle(res);
   }
+
+  // ─── 2FA ──────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> setup2FA() async {
+    final res = await http.post(
+      _url('/auth/2fa/setup'),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> enable2FA(String code) async {
+    final res = await http.post(
+      _url('/auth/2fa/enable', {'code': code}),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> disable2FA(String code) async {
+    final res = await http.post(
+      _url('/auth/2fa/disable', {'code': code}),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> loginWith2FA({
+    required int userId,
+    required String code,
+  }) async {
+    final res = await http.post(
+      _url('/auth/login/2fa', {'user_id': userId.toString(), 'code': code}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return _handle(res);
+  }
+
+  // ─── CSV IMPORT JOB STATUS ────────────────────────────────
+
+  static Future<Map<String, dynamic>> getImportJobStatus(String jobId) async {
+    final res = await http.get(
+      _url('/admin/users/import/$jobId'),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  // ─── NOTIFICATIONS ────────────────────────────────────────
+
+  static Future<List<dynamic>> getNotifications() async {
+    final res = await http.get(
+      _url('/notifications/'),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getUnreadCount() async {
+    final res = await http.get(
+      _url('/notifications/unread-count'),
+      headers: await _authHeaders(),
+    );
+    return _handle(res);
+  }
+
+  static Future<void> markNotificationRead(int id) async {
+    final res = await http.put(
+      _url('/notifications/$id/read'),
+      headers: await _authHeaders(),
+    );
+    _handle(res);
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    final res = await http.put(
+      _url('/notifications/read-all'),
+      headers: await _authHeaders(),
+    );
+    _handle(res);
+  }
+
+  static Future<void> deleteNotification(int id) async {
+    final res = await http.delete(
+      _url('/notifications/$id'),
+      headers: await _authHeaders(),
+    );
+    _handle(res);
+  }
 }

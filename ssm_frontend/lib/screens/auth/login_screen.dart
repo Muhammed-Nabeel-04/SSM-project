@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import 'two_factor_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,7 +46,24 @@ class _LoginScreenState extends State<LoginScreen> {
       _pwdController.text,
       isStudent: _isStudent,
     );
-    if (!success && mounted) {
+    if (!mounted) return;
+
+    // 2FA required — push the code entry screen
+    if (!success && auth.requires2FA) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TwoFactorLoginScreen(
+            userId:   auth.pendingTwoFactorUserId!,
+            userName: auth.pendingTwoFactorUserName ?? 'User',
+            role:     auth.pendingTwoFactorRole ?? 'staff',
+            deptId:   auth.pendingTwoFactorDeptId,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage ?? 'Login failed'),

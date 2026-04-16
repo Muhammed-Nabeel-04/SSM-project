@@ -8,6 +8,7 @@ import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import '../../widgets/notification_bell.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -68,6 +69,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         backgroundColor: AppColors.adminColor,
         elevation: 0,
         actions: [
+          const NotificationBell(iconColor: Colors.white),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',
@@ -83,10 +85,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   title: const Text('Logout'),
                   content: const Text('Are you sure you want to logout?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel')),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                      child: const Text('Logout',
+                          style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
@@ -125,7 +130,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               radius: 26,
                               backgroundColor: Colors.white.withOpacity(0.25),
                               child: Text(
-                                (auth.name ?? 'A').substring(0, 1).toUpperCase(),
+                                (auth.name ?? 'A')
+                                    .substring(0, 1)
+                                    .toUpperCase(),
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
@@ -234,7 +241,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 AppColors.approved),
                             _AdminStatCard(
                                 'Pending Mentor',
-                                _analytics?['pending_mentor']?.toString() ?? '0',
+                                _analytics?['pending_mentor']?.toString() ??
+                                    '0',
                                 Icons.hourglass_empty_rounded,
                                 AppColors.mentorReview),
                             _AdminStatCard(
@@ -270,17 +278,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   ),
                                   _ScorePill(
                                     label: 'Highest',
-                                    value: (_analytics?['highest_score']
-                                                as num?)
-                                            ?.toStringAsFixed(0) ??
-                                        '0',
+                                    value:
+                                        (_analytics?['highest_score'] as num?)
+                                                ?.toStringAsFixed(0) ??
+                                            '0',
                                     color: AppColors.success,
                                   ),
                                   _ScorePill(
                                     label: 'Rejected',
-                                    value: _analytics?['rejected']
-                                            ?.toString() ??
-                                        '0',
+                                    value:
+                                        _analytics?['rejected']?.toString() ??
+                                            '0',
                                     color: AppColors.rejected,
                                   ),
                                 ]),
@@ -307,13 +315,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               BarChartData(
                                 alignment: BarChartAlignment.spaceAround,
                                 maxY: ((starDist.values
-                                            .map((v) =>
-                                                (v as num).toDouble())
-                                            .fold(
-                                                0.0,
-                                                (a, b) =>
-                                                    a > b ? a : b)) +
-                                        2),
+                                        .map((v) => (v as num).toDouble())
+                                        .fold(0.0, (a, b) => a > b ? a : b)) +
+                                    2),
                                 barGroups: [1, 2, 3, 4, 5].map((star) {
                                   final colors = [
                                     Colors.red,
@@ -322,20 +326,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     Colors.lightGreen,
                                     Colors.green
                                   ];
-                                  return BarChartGroupData(
-                                      x: star,
-                                      barRods: [
-                                        BarChartRodData(
-                                          toY: (starDist[star.toString()]
-                                                      as num?)
-                                                  ?.toDouble() ??
-                                              0,
-                                          color: colors[star - 1],
-                                          width: 28,
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                      ]);
+                                  return BarChartGroupData(x: star, barRods: [
+                                    BarChartRodData(
+                                      toY: (starDist[star.toString()] as num?)
+                                              ?.toDouble() ??
+                                          0,
+                                      color: colors[star - 1],
+                                      width: 28,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ]);
                                 }).toList(),
                                 titlesData: FlTitlesData(
                                   leftTitles: const AxisTitles(
@@ -352,8 +352,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                       showTitles: true,
                                       getTitlesWidget: (v, _) => Text(
                                           '${v.toInt()}⭐',
-                                          style: const TextStyle(
-                                              fontSize: 11)),
+                                          style: const TextStyle(fontSize: 11)),
                                     ),
                                   ),
                                 ),
@@ -545,7 +544,6 @@ class _ScorePill extends StatelessWidget {
         Text(value,
             style: TextStyle(
                 fontSize: 32, fontWeight: FontWeight.w800, color: color)),
-        Text(label,
-            style: const TextStyle(color: AppColors.textSecondary)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary)),
       ]);
 }

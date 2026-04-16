@@ -8,6 +8,7 @@ from models.ssm import SSMForm, FormStatus
 from schemas.ssm import MentorReview
 from services.security import require_mentor
 from services.scoring import calculate_and_save
+from services.notifications import push_notification
 
 router = APIRouter(prefix="/mentor", tags=["Mentor"])
 
@@ -162,6 +163,15 @@ def submit_review(
 
     score_row, _ = calculate_and_save(form, db)
 
+    # ── Notify student ────────────────────────────────────────────────────────
+    push_notification(
+        db, form.student_id,
+        title="Mentor Reviewed Your Form ✅",
+        body=f"Your SSM form for {form.academic_year} has been reviewed by your mentor and forwarded to the HOD.",
+        icon="check",
+    )
+    db.commit()
+
     return {
         "message": "Review submitted. Form moved to HOD review.",
         "updated_score": {
@@ -186,6 +196,13 @@ def reject_form(
 
     form.status           = FormStatus.REJECTED
     form.rejection_reason = reason
+    # ── Notify student ────────────────────────────────────────────────────────
+    push_notification(
+        db, form.student_id,
+        title="Form Returned by Mentor ⚠️",
+        body=f"Your SSM form was returned by your mentor: {reason}",
+        icon="warning",
+    )
     db.commit()
     return {"message": "Form rejected. Student can re-submit after corrections."}
 

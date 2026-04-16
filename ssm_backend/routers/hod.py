@@ -8,6 +8,7 @@ from models.ssm import SSMForm, FormStatus
 from schemas.ssm import HODReview
 from services.security import require_hod
 from services.scoring import calculate_and_save
+from services.notifications import push_notification
 
 router = APIRouter(prefix="/hod", tags=["HOD"])
 
@@ -135,6 +136,13 @@ def approve_form(
         form.approved_at = datetime.utcnow()
         # Final score calculation with HOD feedback
         score_row, _ = calculate_and_save(form, db)
+        # ── Notify student ────────────────────────────────────────────────────────
+        push_notification(
+            db, form.student_id,
+            title="Form Approved by HOD 🌟",
+            body=f"Your SSM form for {form.academic_year} has been approved! Final score: {score_row.grand_total:.1f} ({score_row.star_rating}★).",
+            icon="star",
+        )
         db.commit()
         return {
             "message": "Form approved. Score locked.",
@@ -146,6 +154,13 @@ def approve_form(
     else:
         form.status = FormStatus.REJECTED
         form.rejection_reason = payload.remarks
+        # ── Notify student ────────────────────────────────────────────────────────
+        push_notification(
+            db, form.student_id,
+            title="Form Rejected by HOD ⚠️",
+            body=f"Your SSM form for {form.academic_year} was rejected by the HOD: {payload.remarks}",
+            icon="warning",
+        )
         db.commit()
         return {"message": "Form rejected by HOD. Student can re-submit."}
 

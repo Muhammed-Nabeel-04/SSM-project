@@ -6,6 +6,7 @@ import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 import '../../widgets/common_widgets.dart';
+import '../../widgets/notification_bell.dart';
 
 /// The new student dashboard — shows live score + activity log.
 /// Replaces the old monolithic SSMFormScreen.
@@ -73,6 +74,7 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
               style: const TextStyle(fontSize: 12, color: Colors.white70)),
         ]),
         actions: [
+          const NotificationBell(),
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
@@ -129,8 +131,10 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                             icon: const Icon(Icons.send_rounded),
-                            label: const Text('Finalize & Submit Form to Mentor',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            label: const Text(
+                                'Finalize & Submit Form to Mentor',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16)),
                             onPressed: _submitForm,
                           ),
                         ),
@@ -143,15 +147,19 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           decoration: BoxDecoration(
                             color: AppColors.success.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                            border: Border.all(
+                                color: AppColors.success.withOpacity(0.3)),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.lock_rounded, color: AppColors.success, size: 18),
+                              Icon(Icons.lock_rounded,
+                                  color: AppColors.success, size: 18),
                               SizedBox(width: 8),
                               Text('Form submitted and locked for review',
-                                  style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+                                  style: TextStyle(
+                                      color: AppColors.success,
+                                      fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -194,8 +202,9 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           delegate: SliverChildBuilderDelegate(
                             (ctx, i) => _ActivityCard(
                               activity: filtered[i],
-                              onDelete: canEdit ? () =>
-                                  _deleteActivity(filtered[i]['id']) : null,
+                              onDelete: canEdit
+                                  ? () => _deleteActivity(filtered[i]['id'])
+                                  : null,
                             ),
                             childCount: filtered.length,
                           ),
@@ -203,16 +212,18 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                       ),
                   ]),
                 ),
-      floatingActionButton: canEdit ? FloatingActionButton.extended(
-        onPressed: () async {
-          final added = await context.push<bool>('/student/add-activity');
-          if (added == true) _load();
-        },
-        backgroundColor: AppColors.accent,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Activity',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-      ) : null,
+      floatingActionButton: canEdit
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final added = await context.push<bool>('/student/add-activity');
+                if (added == true) _load();
+              },
+              backgroundColor: AppColors.accent,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Activity',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            )
+          : null,
     );
   }
 
@@ -248,28 +259,36 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
   Future<void> _submitForm() async {
     final formId = _data?['form_id'] as int?;
     if (formId == null) return;
-    
+
     final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Submit Form?'),
-        content: const Text('Once submitted, you cannot add or delete activities until the mentor completes their final academic review. Do you want to proceed?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold))),
-        ],
-      )
-    );
+        context: context,
+        builder: (_) => AlertDialog(
+              title: const Text('Submit Form?'),
+              content: const Text(
+                  'Once submitted, you cannot add or delete activities until the mentor completes their final academic review. Do you want to proceed?'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel')),
+                TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Submit',
+                        style: TextStyle(fontWeight: FontWeight.bold))),
+              ],
+            ));
     if (confirm != true || !mounted) return;
-    
+
     try {
       await ApiService.submitForm(formId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form successfully submitted to Mentor!'), backgroundColor: AppColors.success));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Form successfully submitted to Mentor!'),
+          backgroundColor: AppColors.success));
       _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
   }
 

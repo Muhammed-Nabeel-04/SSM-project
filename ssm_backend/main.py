@@ -17,6 +17,8 @@ from routers import auth, student, mentor, hod, admin
 from routers.files import router as files_router
 from routers.activity import router as activity_router
 from routers.settings import router as academic_router
+from routers.notifications import router as notifications_router
+import models.notification  # ensure table is picked up by Alembic/Base
 import logging
 
 logging.basicConfig(
@@ -67,6 +69,7 @@ app.include_router(admin.router)
 app.include_router(files_router)
 app.include_router(activity_router)
 app.include_router(academic_router)
+app.include_router(notifications_router)
 
 # ─── STARTUP ──────────────────────────────────────────────────────────────────
 

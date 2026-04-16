@@ -32,14 +32,16 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         user = db.query(User).filter(
             User.register_number == payload.register_number,
             User.role == UserRole.STUDENT,
-            User.is_active == True
+            User.is_active == True,
+            User.deleted_at.is_(None)
         ).first()
         error_msg = "Invalid register number or password"
     elif payload.email:
         user = db.query(User).filter(
             User.email == payload.email,
             User.role.in_([UserRole.MENTOR, UserRole.HOD, UserRole.ADMIN]),
-            User.is_active == True
+            User.is_active == True,
+            User.deleted_at.is_(None)
         ).first()
         error_msg = "Invalid email or password"
     else:
@@ -53,6 +55,20 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=error_msg,
         )
+
+    # If 2FA enabled for this user, signal the client to prompt for TOTP code
+    if getattr(user, 'is_2fa_enabled', False):
+        return {
+            "requires_2fa": True,
+            "user_id": user.id,
+            "access_token": None,
+            "refresh_token": None,
+            "role": user.role.value,
+            "user_id": user.id,
+            "name": user.name,
+            "department_id": user.department_id,
+            "must_change_password": user.must_change_password,
+        }
 
     token = create_access_token(user.id, user.role.value, user.department_id)
     _, refresh_tok = create_session(db, user, token, request)
@@ -183,3 +199,110 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return user
+
+
+# ─── 2FA SETUP & MANAGEMENT ───────────────────────────────────────────────────
+
+@router.post("/2fa/setup")
+def setup_2fa(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Generates a new TOTP secret and returns a provisioning URI.
+    The client should display this as a QR code using a library like qr_flutter.
+    User must then call /auth/2fa/enable with the first valid code to activate.
+    """
+    import pyotp
+
+    secret = pyotp.random_base32()
+    totp   = pyotp.TOTP(secret)
+    uri    = totp.provisioning_uri(
+        name=current_user.email,
+        issuer_name="SSM System",
+    )
+    # Temporarily store the secret (not yet active until they verify one code)
+    current_user.totp_secret = secret
+    db.commit()
+    return {"provisioning_uri": uri, "secret": secret}
+
+
+@router.post("/2fa/enable")
+def enable_2fa(
+    code: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Verifies the TOTP code entered by the user and enables 2FA on their account.
+    """
+    import pyotp
+    if not current_user.totp_secret:
+        raise HTTPException(status_code=400, detail="Run /auth/2fa/setup first.")
+
+    totp = pyotp.TOTP(current_user.totp_secret)
+    if not totp.verify(code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid or expired code. Try again.")
+
+    current_user.is_2fa_enabled = True
+    db.commit()
+    return {"message": "2FA enabled successfully! You will need your authenticator app on next login."}
+
+
+@router.post("/2fa/disable")
+def disable_2fa(
+    code: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Disables 2FA after verifying the current TOTP code."""
+    import pyotp
+    if not current_user.is_2fa_enabled or not current_user.totp_secret:
+        raise HTTPException(status_code=400, detail="2FA is not currently enabled.")
+
+    totp = pyotp.TOTP(current_user.totp_secret)
+    if not totp.verify(code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid or expired code.")
+
+    current_user.is_2fa_enabled = False
+    current_user.totp_secret = None
+    db.commit()
+    return {"message": "2FA disabled successfully."}
+
+
+@router.post("/login/2fa", response_model=TokenResponse)
+def login_with_2fa(
+    user_id: int,
+    code:    str,
+    request: Request,
+    db:      Session = Depends(get_db),
+):
+    """
+    Second step for staff login when 2FA is enabled.
+    Accepts the user_id from the first login response and the TOTP code.
+    """
+    import pyotp
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.is_active == True,
+        User.deleted_at.is_(None),
+    ).first()
+    if not user or not user.is_2fa_enabled or not user.totp_secret:
+        raise HTTPException(status_code=400, detail="Invalid 2FA request.")
+
+    totp = pyotp.TOTP(user.totp_secret)
+    if not totp.verify(code, valid_window=1):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired 2FA code.")
+
+    token = create_access_token(user.id, user.role.value, user.department_id)
+    _, refresh_tok = create_session(db, user, token, request)
+
+    return TokenResponse(
+        access_token  = token,
+        refresh_token = refresh_tok,
+        role          = user.role.value,
+        user_id       = user.id,
+        name          = user.name,
+        department_id = user.department_id,
+        must_change_password = user.must_change_password,
+    )

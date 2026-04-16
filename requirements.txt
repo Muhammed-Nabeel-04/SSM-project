@@ -62,3 +62,7 @@ uvicorn
 watchfiles
 websockets
 wrapt
+alembic
+supabase
+pyotp
+qrcode[pil]
