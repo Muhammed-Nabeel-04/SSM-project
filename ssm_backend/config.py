@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = ""
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost"
+    ALLOWED_ORIGINS: str = "http://localhost,https://noisy-unit-b55c.nabeelm...workers.dev"
 
     class Config:
         env_file = ".env"

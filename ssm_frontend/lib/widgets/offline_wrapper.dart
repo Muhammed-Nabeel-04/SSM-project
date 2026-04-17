@@ -30,7 +30,8 @@ class _OfflineWrapperState extends State<OfflineWrapper> {
   Future<void> _check() async {
     final results = await Connectivity().checkConnectivity();
     if (mounted) {
-      setState(() => _isOffline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+      setState(() => _isOffline = results.isEmpty ||
+          results.every((r) => r == ConnectivityResult.none));
     }
   }
 

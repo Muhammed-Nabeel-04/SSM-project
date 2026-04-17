@@ -1,6 +1,9 @@
+import 'dart:async'; // Added import
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../services/token_service.dart';
+import 'dart:async'; // ✅ ADD THIS (line 1)
+import 'dart:io'; // ✅ ADD THIS (line 2)
 
 enum AuthState { unknown, authenticated, unauthenticated }
 
@@ -97,14 +100,58 @@ class AuthProvider extends ChangeNotifier {
       _fetchProfile();
       return true;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      if (e.statusCode == 503) {
+        _errorMessage = e.message;
+      } else if (e.statusCode == 495) {
+        _errorMessage = e.message;
+      } else if (e.statusCode == 408) {
+        _errorMessage = 'Connection timeout. Server took too long to respond.';
+      } else if (e.statusCode == 500) {
+        _errorMessage = e.message;
+      } else if (e.statusCode == 401) {
+        _errorMessage =
+            'Invalid credentials. Please check your ${isStudent ? "register number" : "email"} and password.';
+      } else {
+        _errorMessage = e.message;
+      }
+      _loading = false;
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    } on SocketException catch (e) {
+      _errorMessage = e.message.contains('Failed host lookup')
+          ? 'Cannot reach server. Check your internet connection.'
+          : 'No internet connection. Please check your network.';
+      _loading = false;
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    } on HandshakeException {
+      _errorMessage = 'Security error. Try enabling VPN or use mobile data.';
+      _loading = false;
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    } on TimeoutException {
+      _errorMessage =
+          'Connection too slow. Please try again or use a different network.';
+      _loading = false;
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    } on FormatException {
+      _errorMessage =
+          'Server returned invalid response. Please try again later.';
       _loading = false;
       _state = AuthState.unauthenticated;
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Connection failed. Please try again.';
+      final errorStr = e.toString();
+      _errorMessage =
+          'Unexpected error: ${errorStr.length > 50 ? errorStr.substring(0, 50) + "..." : errorStr}';
       _loading = false;
+      _state = AuthState.unauthenticated;
       notifyListeners();
       return false;
     }
@@ -142,6 +189,11 @@ class AuthProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
       return false;
+    } on TimeoutException {
+      _errorMessage = 'Connection timed out. Please try again.';
+      _loading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
       _errorMessage = 'Verification failed. Please try again.';
       _loading = false;
@@ -175,7 +227,8 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _fetchProfile() async {
     try {
       _profile = await ApiService.getMe();
-      profileNotifier.value = _profile; // ← notify listeners so ProfileScreen updates
+      profileNotifier.value =
+          _profile; // ← notify listeners so ProfileScreen updates
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         // Try refresh token first before logging out

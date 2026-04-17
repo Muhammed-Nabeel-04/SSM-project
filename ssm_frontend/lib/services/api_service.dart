@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'dart:async'; // ✅ ADD THIS if not present
+import 'dart:io'; // ✅ Should already be there
 
 import '../config/constants.dart';
 import 'token_service.dart';
@@ -18,10 +20,22 @@ class ApiException implements Exception {
 
 class ApiService {
   static final _base = Uri.parse(AppConfig.baseUrl);
+  static const _kTimeout = Duration(seconds: 30);
+
+  static Future<http.Response> _get(Uri url, {Map<String, String>? headers}) =>
+      http.get(url, headers: headers).timeout(_kTimeout);
+  static Future<http.Response> _post(Uri url,
+          {Map<String, String>? headers, Object? body}) =>
+      http.post(url, headers: headers, body: body).timeout(_kTimeout);
+  static Future<http.Response> _put(Uri url,
+          {Map<String, String>? headers, Object? body}) =>
+      http.put(url, headers: headers, body: body).timeout(_kTimeout);
+  static Future<http.Response> _del(Uri url, {Map<String, String>? headers}) =>
+      http.delete(url, headers: headers).timeout(_kTimeout);
 
   // ─── HELPERS ──────────────────────────────────────────────
 
-  static const _timeout = Duration(seconds: 15);
+  static const _timeout = Duration(seconds: 30);
 
   static Future<Map<String, String>> _authHeaders() async {
     final token = await TokenService.getToken();
@@ -33,10 +47,16 @@ class ApiService {
   }
 
   static dynamic _handle(http.Response res) {
-    final body = json.decode(res.body);
+    dynamic body;
+    try {
+      body = json.decode(res.body);
+    } on FormatException {
+      throw ApiException(500,
+          'Server error: Invalid response format. Please try again later.');
+    }
     if (res.statusCode >= 200 && res.statusCode < 300) return body;
     if (res.statusCode == 401) {
-      throw ApiException(401, 'Session expired. Please log in again.');
+      throw ApiException(401, 'Invalid credentials or session expired.');
     }
     final msg = body['detail'] ?? 'Request failed';
     throw ApiException(res.statusCode, msg is String ? msg : msg.toString());
@@ -57,23 +77,43 @@ class ApiService {
     String password, {
     bool isStudent = true,
   }) async {
-    final res = await http
-        .post(
-          _url('/auth/login'),
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: json.encode({
-            if (isStudent)
-              'register_number': identifier
-            else
-              'email': identifier,
-            'password': password,
-          }),
-        )
-        .timeout(_timeout, onTimeout: () => throw _timeoutError());
-    return _handle(res);
+    try {
+      final res = await http
+          .post(
+            _url('/auth/login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: json.encode({
+              if (isStudent)
+                'register_number': identifier
+              else
+                'email': identifier,
+              'password': password,
+            }),
+          )
+          .timeout(_timeout, onTimeout: () => throw _timeoutError());
+      return _handle(res);
+    } on SocketException catch (e) {
+      if (e.message.contains('Failed host lookup')) {
+        throw ApiException(
+            503, 'Cannot reach server. Check your internet connection.');
+      }
+      throw ApiException(
+          503, 'No internet connection. Please check your network.');
+    } on HandshakeException {
+      throw ApiException(
+          495, 'Security error. Try enabling VPN or use mobile data.');
+    } on TimeoutException {
+      throw ApiException(408,
+          'Connection too slow. Please try again or use a different network.');
+    } on FormatException {
+      throw ApiException(
+          500, 'Server returned invalid response. Please try again later.');
+    } on HttpException catch (e) {
+      throw ApiException(500, 'Connection error: ${e.message}');
+    }
   }
 
   static Future<void> logout() async {
@@ -188,9 +228,9 @@ class ApiService {
 
     // Multipart requests need timeout on the send and stream conversion
     final streamed = await request.send().timeout(
-      _timeout,
-      onTimeout: () => throw _timeoutError(),
-    );
+          _timeout,
+          onTimeout: () => throw _timeoutError(),
+        );
     final res = await http.Response.fromStream(
       streamed,
     ).timeout(_timeout, onTimeout: () => throw _timeoutError());
@@ -250,9 +290,9 @@ class ApiService {
     request.headers['Authorization'] = 'Bearer $token';
     if (note != null) request.fields['note'] = note;
     final streamed = await request.send().timeout(
-      _timeout,
-      onTimeout: () => throw _timeoutError(),
-    );
+          _timeout,
+          onTimeout: () => throw _timeoutError(),
+        );
     final res = await http.Response.fromStream(
       streamed,
     ).timeout(_timeout, onTimeout: () => throw _timeoutError());
@@ -271,9 +311,9 @@ class ApiService {
     request.headers['Authorization'] = 'Bearer $token';
     request.fields['note'] = note;
     final streamed = await request.send().timeout(
-      _timeout,
-      onTimeout: () => throw _timeoutError(),
-    );
+          _timeout,
+          onTimeout: () => throw _timeoutError(),
+        );
     final res = await http.Response.fromStream(
       streamed,
     ).timeout(_timeout, onTimeout: () => throw _timeoutError());
@@ -372,9 +412,8 @@ class ApiService {
   static Future<Map<String, dynamic>> getDeptReport([
     String? academicYear,
   ]) async {
-    final params = academicYear != null
-        ? {'academic_year': academicYear}
-        : null;
+    final params =
+        academicYear != null ? {'academic_year': academicYear} : null;
     final res = await http
         .get(
           _url('/hod/reports/department', params),
@@ -389,9 +428,8 @@ class ApiService {
   static Future<Map<String, dynamic>> getAdminAnalytics([
     String? academicYear,
   ]) async {
-    final params = academicYear != null
-        ? {'academic_year': academicYear}
-        : null;
+    final params =
+        academicYear != null ? {'academic_year': academicYear} : null;
     final res = await http
         .get(
           _url('/admin/analytics/overview', params),
@@ -404,9 +442,8 @@ class ApiService {
   static Future<Map<String, dynamic>> getTopStudents([
     String? academicYear,
   ]) async {
-    final params = academicYear != null
-        ? {'academic_year': academicYear}
-        : null;
+    final params =
+        academicYear != null ? {'academic_year': academicYear} : null;
     final res = await http
         .get(
           _url('/admin/analytics/top-students', params),
@@ -472,9 +509,9 @@ class ApiService {
       ),
     );
     final streamed = await request.send().timeout(
-      _timeout,
-      onTimeout: () => throw _timeoutError(),
-    );
+          _timeout,
+          onTimeout: () => throw _timeoutError(),
+        );
     final res = await http.Response.fromStream(
       streamed,
     ).timeout(_timeout, onTimeout: () => throw _timeoutError());
@@ -583,12 +620,10 @@ class ApiService {
     required int userId,
     required String code,
   }) async {
-    final res = await http
-        .post(
-          _url('/auth/login/2fa', {'user_id': userId.toString(), 'code': code}),
-          headers: {'Content-Type': 'application/json'},
-        )
-        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    final res = await http.post(
+      _url('/auth/login/2fa', {'user_id': userId.toString(), 'code': code}),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(_timeout, onTimeout: () => throw _timeoutError());
     return _handle(res);
   }
 

@@ -1,21 +1,37 @@
-# Environment
+# ─── SECRETS ────────────────────────────────────────────
 .env
+*.env
+.env.*
 
-# Database
+# ─── Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+
+# ─── Virtual Environment ────────────────────────────────
+venv/
+env/
+.venv/
+ENV/
+
+# ─── Uploads ────────────────────────────────────────────
+uploads/
+
+# ─── Logs ───────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Database ───────────────────────────────────────────
 *.db
 *.sqlite3
 
-# Uploads
-uploads/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-venv/
-.venv/
-*.egg-info/
-
-# IDE
+# ─── IDE ────────────────────────────────────────────────
 .vscode/
 .idea/
+
+# ─── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
