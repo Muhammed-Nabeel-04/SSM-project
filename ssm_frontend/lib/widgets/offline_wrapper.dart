@@ -20,16 +20,17 @@ class _OfflineWrapperState extends State<OfflineWrapper> {
   void initState() {
     super.initState();
     _check();
-    Connectivity().onConnectivityChanged.listen((result) {
-      final offline = result == ConnectivityResult.none;
+    Connectivity().onConnectivityChanged.listen((results) {
+      final offline =
+          results.isEmpty || results.every((r) => r == ConnectivityResult.none);
       if (offline != _isOffline) setState(() => _isOffline = offline);
     });
   }
 
   Future<void> _check() async {
-    final result = await Connectivity().checkConnectivity();
+    final results = await Connectivity().checkConnectivity();
     if (mounted) {
-      setState(() => _isOffline = result == ConnectivityResult.none);
+      setState(() => _isOffline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
     }
   }
 
@@ -44,8 +45,7 @@ class _OfflineWrapperState extends State<OfflineWrapper> {
             color: const Color(0xFFB71C1C),
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
             child: Row(children: [
-              const Icon(Icons.wifi_off_rounded,
-                  color: Colors.white, size: 16),
+              const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
               const SizedBox(width: 8),
               const Text('No internet connection',
                   style: TextStyle(color: Colors.white, fontSize: 13)),
