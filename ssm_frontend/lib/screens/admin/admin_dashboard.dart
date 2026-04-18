@@ -35,7 +35,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       // First-time setup check
       try {
         final deptCount = await ApiService.getDepartmentCount();
-        if (deptCount <= 1 && mounted) {
+        if (deptCount == 0 && mounted) {
           context.go('/setup');
           return;
         }
@@ -51,8 +51,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _topStudents = (topData['items'] as List?) ?? [];
         _loading = false;
       });
-    } catch (_) {
-      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _analytics = null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to load dashboard: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

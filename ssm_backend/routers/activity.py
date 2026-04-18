@@ -584,7 +584,7 @@ def approve_activity(
     push_notification(
         db, act.student_id,
         title="Activity Approved ✅",
-        body=f'Your activity "{act.title}" has been approved by your mentor.',
+        body=f'Your {act.activity_type.value.replace("_", " ").title()} activity has been approved by your mentor.',
         icon="check",
     )
     db.commit()
@@ -616,7 +616,7 @@ def reject_activity(
     push_notification(
         db, act.student_id,
         title="Activity Returned ⚠️",
-        body=f'Your activity "{act.title}" was returned: {note}',
+        body=f'Your {act.activity_type.value.replace("_", " ").title()} activity was returned by mentor: {note}',
         icon="warning",
     )
     db.commit()

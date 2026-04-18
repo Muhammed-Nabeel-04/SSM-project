@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
@@ -97,12 +98,30 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
       return;
     }
 
+    final email = _emailCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      setState(() {
+        _success = false;
+        _message = 'Enter a valid email address.';
+      });
+      return;
+    }
+
+    if (!RegExp(r'^\d{10}$').hasMatch(phone)) {
+      setState(() {
+        _success = false;
+        _message = 'Phone number must be exactly 10 digits.';
+      });
+      return;
+    }
+
     setState(() {
       _saving = true;
       _message = null;
     });
-
-    final phone = _phoneCtrl.text.trim();
     // Calculate year_of_study from semester
     final yearOfStudy = _semester != null ? ((_semester! + 1) ~/ 2) : null;
 
@@ -118,7 +137,8 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
         if (_mentorId != null) 'mentor_id': _mentorId,
         // Student-only academic fields
         if (_role == 'student' && _semester != null) 'semester': _semester,
-        if (_role == 'student' && yearOfStudy != null) 'year_of_study': yearOfStudy,
+        if (_role == 'student' && yearOfStudy != null)
+          'year_of_study': yearOfStudy,
         if (_role == 'student' && _batchCtrl.text.trim().isNotEmpty)
           'batch': _batchCtrl.text.trim(),
         if (_role == 'student' && _sectionCtrl.text.trim().isNotEmpty)
@@ -228,7 +248,9 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                       _required(
                           'Phone Number', _phoneCtrl, Icons.phone_outlined,
                           keyboard: TextInputType.phone,
-                          hint: 'Used as default password'),
+                          hint: 'Used as default password',
+                          maxLength: 10,
+                          digitsOnly: true),
 
                       // ── Department dropdown (all except admin) ────────────────
                       if (_role != 'admin') ...[
@@ -332,7 +354,9 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                                   ))
                               .toList(),
                           onChanged: (val) => setState(() => _semester = val),
-                          validator: (v) => _role == 'student' && v == null ? 'Required' : null,
+                          validator: (v) => _role == 'student' && v == null
+                              ? 'Required'
+                              : null,
                         ),
                         const SizedBox(height: 14),
 
@@ -347,7 +371,10 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                               prefixIcon:
                                   Icon(Icons.calendar_today_rounded, size: 20),
                             ),
-                            validator: (v) => _role == 'student' && (v == null || v.isEmpty) ? 'Required' : null,
+                            validator: (v) =>
+                                _role == 'student' && (v == null || v.isEmpty)
+                                    ? 'Required'
+                                    : null,
                           ),
                         ),
 
@@ -362,7 +389,10 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                               hintText: 'e.g. A',
                               prefixIcon: Icon(Icons.group_rounded, size: 20),
                             ),
-                            validator: (v) => _role == 'student' && (v == null || v.isEmpty) ? 'Required' : null,
+                            validator: (v) =>
+                                _role == 'student' && (v == null || v.isEmpty)
+                                    ? 'Required'
+                                    : null,
                           ),
                         ),
                       ],
@@ -453,17 +483,23 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
   Widget _required(String label, TextEditingController ctrl, IconData icon,
           {TextInputType keyboard = TextInputType.text,
           TextCapitalization caps = TextCapitalization.none,
-          String? hint}) =>
+          String? hint,
+          int? maxLength,
+          bool digitsOnly = false}) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 14),
         child: TextFormField(
           controller: ctrl,
           keyboardType: keyboard,
           textCapitalization: caps,
+          maxLength: maxLength,
+          inputFormatters:
+              digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
           decoration: InputDecoration(
               labelText: label,
               hintText: hint,
-              prefixIcon: Icon(icon, size: 20)),
+              prefixIcon: Icon(icon, size: 20),
+              counterText: ''),
           validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
         ),
       );

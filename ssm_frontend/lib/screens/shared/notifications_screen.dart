@@ -64,7 +64,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
     final roleColor = _roleColor(auth.role ?? '');
-    final unreadCount = _notifications.where((n) => n['is_read'] != true).length;
+    final unreadCount =
+        _notifications.where((n) => n['is_read'] != true).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -81,7 +82,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text('$unreadCount new',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           ],
         ]),
@@ -105,7 +107,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: _notifications.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, indent: 72),
                     itemBuilder: (ctx, i) {
                       final n = _notifications[i];
                       return _NotificationTile(
@@ -121,15 +124,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Color _roleColor(String role) {
     switch (role) {
-      case 'student': return AppColors.primary;
-      case 'mentor':  return AppColors.mentorColor;
-      case 'hod':     return AppColors.hodColor;
-      case 'admin':   return AppColors.adminColor;
-      default:        return AppColors.primary;
+      case 'student':
+        return AppColors.primary;
+      case 'mentor':
+        return AppColors.mentorColor;
+      case 'hod':
+        return AppColors.hodColor;
+      case 'admin':
+        return AppColors.adminColor;
+      default:
+        return AppColors.primary;
     }
   }
 }
-
 
 class _NotificationTile extends StatelessWidget {
   final Map<String, dynamic> notification;
@@ -161,7 +168,8 @@ class _NotificationTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          color: isRead ? Colors.transparent : AppColors.primary.withOpacity(0.04),
+          color:
+              isRead ? Colors.transparent : AppColors.primary.withOpacity(0.04),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +202,9 @@ class _NotificationTile extends StatelessWidget {
                     Text(
                       notification['body'] ?? '',
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          height: 1.4),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -224,28 +234,40 @@ class _NotificationTile extends StatelessWidget {
 
   Color _iconBgColor(String icon) {
     switch (icon) {
-      case 'check':   return const Color(0xFF06D6A0).withOpacity(0.12);
-      case 'warning': return Colors.orange.withOpacity(0.12);
-      case 'star':    return const Color(0xFFFFD700).withOpacity(0.15);
-      default:        return AppColors.primary.withOpacity(0.10);
+      case 'check':
+        return const Color(0xFF06D6A0).withOpacity(0.12);
+      case 'warning':
+        return Colors.orange.withOpacity(0.12);
+      case 'star':
+        return const Color(0xFFFFD700).withOpacity(0.15);
+      default:
+        return AppColors.primary.withOpacity(0.10);
     }
   }
 
   Color _iconColor(String icon) {
     switch (icon) {
-      case 'check':   return const Color(0xFF06D6A0);
-      case 'warning': return Colors.orange;
-      case 'star':    return const Color(0xFFFFAA00);
-      default:        return AppColors.primary;
+      case 'check':
+        return const Color(0xFF06D6A0);
+      case 'warning':
+        return Colors.orange;
+      case 'star':
+        return const Color(0xFFFFAA00);
+      default:
+        return AppColors.primary;
     }
   }
 
   IconData _iconData(String icon) {
     switch (icon) {
-      case 'check':   return Icons.check_circle_rounded;
-      case 'warning': return Icons.warning_amber_rounded;
-      case 'star':    return Icons.star_rounded;
-      default:        return Icons.notifications_rounded;
+      case 'check':
+        return Icons.check_circle_rounded;
+      case 'warning':
+        return Icons.warning_amber_rounded;
+      case 'star':
+        return Icons.star_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
@@ -265,7 +287,6 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -284,7 +305,9 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const Text("You're all caught up!",
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary)),
           const SizedBox(height: 6),
           const Text("Notifications about your forms will appear here.",

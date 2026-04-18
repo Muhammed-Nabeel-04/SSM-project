@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -110,15 +111,6 @@ class _DetailsTabState extends State<_DetailsTab> {
   void initState() {
     super.initState();
     _prefill();
-    // If profile not loaded yet, fetch it and prefill when ready
-    if (widget.profile == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        try {
-          final data = await ApiService.getMe();
-          if (mounted) _prefillFromMap(data);
-        } catch (_) {}
-      });
-    }
   }
 
   @override
@@ -156,6 +148,30 @@ class _DetailsTabState extends State<_DetailsTab> {
   }
 
   Future<void> _save() async {
+    final email = _emailCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+
+    if (email.isNotEmpty) {
+      final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+      if (!emailRegex.hasMatch(email)) {
+        setState(() {
+          _success = false;
+          _message = 'Enter a valid email address.';
+        });
+        return;
+      }
+    }
+
+    if (phone.isNotEmpty) {
+      if (!RegExp(r'^\d{10}$').hasMatch(phone)) {
+        setState(() {
+          _success = false;
+          _message = 'Phone number must be exactly 10 digits.';
+        });
+        return;
+      }
+    }
+
     setState(() {
       _saving = true;
       _message = null;
@@ -251,7 +267,7 @@ class _DetailsTabState extends State<_DetailsTab> {
             keyboard: TextInputType.emailAddress),
         // Phone
         _field('Phone Number', _phoneCtrl, Icons.phone_outlined,
-            keyboard: TextInputType.phone),
+            keyboard: TextInputType.phone, maxLength: 10, digitsOnly: true),
 
         // Student-only fields — academic info is read-only (set by admin)
         if (widget.role == 'student') ...[
@@ -329,15 +345,21 @@ class _DetailsTabState extends State<_DetailsTab> {
   }
 
   Widget _field(String label, TextEditingController ctrl, IconData icon,
-      {TextInputType keyboard = TextInputType.text}) {
+      {TextInputType keyboard = TextInputType.text,
+      int? maxLength,
+      bool digitsOnly = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: ctrl,
         keyboardType: keyboard,
+        maxLength: maxLength,
+        inputFormatters:
+            digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, size: 20),
+          counterText: '',
         ),
       ),
     );

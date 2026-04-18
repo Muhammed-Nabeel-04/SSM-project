@@ -62,6 +62,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     try {
       await ApiService.updateSystemSettings(
         academicYear: _yearCtrl.text.trim(),
+        currentSemester: _selectedSemester,
       );
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Settings saved!'),

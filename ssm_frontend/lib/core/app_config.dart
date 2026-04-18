@@ -8,7 +8,7 @@ class AppConfig {
   static const String urlLocalhost = 'http://127.0.0.1:8000';
 
   static const String _defaultUrl =
-      'https://noisy-unit-b55c.nabeelm...workers.dev';
+      'https://noisy-unit-b55c.nabeelmdnabeel1229.workers.dev';
 
   static const String _keyBackendUrl = 'backend_url';
   static late SharedPreferences _prefs;

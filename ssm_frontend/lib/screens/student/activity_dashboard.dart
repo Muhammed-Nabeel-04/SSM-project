@@ -205,6 +205,9 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                               onDelete: canEdit
                                   ? () => _deleteActivity(filtered[i]['id'])
                                   : null,
+                              onReapply: canEdit
+                                  ? () => _reapplyActivity(filtered[i])
+                                  : null,
                             ),
                             childCount: filtered.length,
                           ),
@@ -251,6 +254,37 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
       await ApiService.deleteActivity(id);
       _load();
     } on ApiException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    }
+  }
+
+  Future<void> _reapplyActivity(Map<String, dynamic> activity) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reapply Activity?'),
+        content: const Text(
+            'This will delete the rejected activity so you can submit a new one. Continue?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Yes, Reapply',
+                  style: TextStyle(color: AppColors.primary))),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      await ApiService.deleteActivity(activity['id']);
+      if (!mounted) return;
+      final added = await context.push<bool>('/student/add-activity');
+      if (added == true) _load();
+    } on ApiException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
@@ -441,7 +475,8 @@ class _CategoryFilter extends StatelessWidget {
 class _ActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
   final VoidCallback? onDelete;
-  const _ActivityCard({required this.activity, this.onDelete});
+  final VoidCallback? onReapply;
+  const _ActivityCard({required this.activity, this.onDelete, this.onReapply});
 
   @override
   Widget build(BuildContext context) {
@@ -561,21 +596,37 @@ class _ActivityCard extends StatelessWidget {
                     fontStyle: FontStyle.italic)),
           ],
 
-          // ── Delete button (only for non-approved) ─────────────────────
+          // ── Delete / Reapply buttons ───────────────────────────────────
           if (mentorStatus != 'approved') ...[
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded,
-                    size: 16, color: AppColors.error),
-                label: const Text('Delete',
-                    style: TextStyle(color: AppColors.error, fontSize: 12)),
-                style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (mentorStatus == 'rejected') ...[
+                  TextButton.icon(
+                    onPressed: onReapply,
+                    icon: const Icon(Icons.refresh_rounded,
+                        size: 16, color: AppColors.primary),
+                    label: const Text('Reapply',
+                        style:
+                            TextStyle(color: AppColors.primary, fontSize: 12)),
+                    style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4)),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                TextButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      size: 16, color: AppColors.error),
+                  label: const Text('Delete',
+                      style: TextStyle(color: AppColors.error, fontSize: 12)),
+                  style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4)),
+                ),
+              ],
             ),
           ],
         ]),

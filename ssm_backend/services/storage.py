@@ -7,13 +7,21 @@ logger = logging.getLogger("ssm.storage")
 class SupabaseStorageService:
     def __init__(self):
         self.bucket_name = "ssm-files"
+        logger.info(f"SUPABASE_URL present: {bool(settings.SUPABASE_URL)}")
+        logger.info(f"SUPABASE_KEY present: {bool(settings.SUPABASE_KEY)}")
         if settings.SUPABASE_URL and settings.SUPABASE_KEY:
-            self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-            self.enabled = True
+            try:
+                self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+                self.enabled = True
+                logger.info("✅ Supabase Storage initialized successfully.")
+            except Exception as e:
+                self.client = None
+                self.enabled = False
+                logger.error(f"❌ Supabase client creation failed: {e}")
         else:
             self.client = None
             self.enabled = False
-            logger.warning("Supabase Storage is NOT configured. File uploads will fail.")
+            logger.warning("❌ Supabase Storage is NOT configured. SUPABASE_URL or SUPABASE_KEY is missing.")
 
     def upload_file(self, file_bytes: bytes, file_path: str, content_type: str) -> str:
         """
@@ -28,7 +36,7 @@ class SupabaseStorageService:
             res = self.client.storage.from_(self.bucket_name).upload(
                 file_path,
                 file_bytes,
-                file_options={"content-type": content_type, "upsert": "true"}
+                file_options={"content-type": content_type, "upsert": True}
             )
             # Generate the public URL
             public_url = self.client.storage.from_(self.bucket_name).get_public_url(file_path)
