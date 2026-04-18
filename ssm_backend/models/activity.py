@@ -125,6 +125,10 @@ class StudentActivity(Base):
 
     submitted_at  = Column(DateTime, default=datetime.utcnow)
     verified_at   = Column(DateTime, nullable=True)
+    
+    # Soft delete fields
+    is_deleted    = Column(Boolean, default=False, nullable=False)
+    deleted_at    = Column(DateTime, nullable=True)
 
     # Relationships
     form    = relationship("SSMForm", foreign_keys=[form_id])

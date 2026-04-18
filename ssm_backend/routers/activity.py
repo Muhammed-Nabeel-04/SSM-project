@@ -452,6 +452,7 @@ def _submission_message(ocr: OCRStatus, mentor: MentorStatus) -> str:
 def my_activities(
     category:      Optional[str] = None,
     mentor_status: Optional[str] = None,
+    show_deleted:  bool = Query(False),
     limit:  int = Query(50, ge=1, le=200),
     offset: int = Query(0,  ge=0),
     current_user: User    = Depends(require_student),
@@ -462,6 +463,7 @@ def my_activities(
     query = db.query(StudentActivity).filter(
         StudentActivity.student_id == current_user.id,
         StudentActivity.form_id    == form.id,
+        StudentActivity.is_deleted == show_deleted,
     )
     if category:
         query = query.filter(StudentActivity.category == category)
@@ -499,6 +501,27 @@ def my_activities(
 
 # ─── STUDENT: DELETE PENDING ACTIVITY ─────────────────────────────────────────
 
+@router.post("/{activity_id}/restore")
+def restore_activity(
+    activity_id: int,
+    current_user: User    = Depends(require_student),
+    db:           Session = Depends(get_db),
+):
+    act = db.query(StudentActivity).filter(
+        StudentActivity.id         == activity_id,
+        StudentActivity.student_id == current_user.id,
+        StudentActivity.is_deleted == True,
+    ).first()
+    if not act:
+        raise HTTPException(status_code=404, detail="Deleted activity not found")
+    
+    # Restore
+    act.is_deleted = False
+    act.deleted_at = None
+    db.commit()
+    return {"message": "Activity restored"}
+
+
 @router.delete("/{activity_id}")
 def delete_activity(
     activity_id: int,
@@ -514,9 +537,13 @@ def delete_activity(
     if act.mentor_status == MentorStatus.APPROVED:
         raise HTTPException(status_code=400, detail="Cannot delete an approved activity")
 
-    # Remove file from disk
-    if act.file_path and os.path.exists(act.file_path):
-        os.remove(act.file_path)
+    # Remove file from Supabase
+    if act.file_path:
+        try:
+            from services.storage import storage_service
+            storage_service.client.storage.from_(storage_service.bucket_name).remove([act.file_path])
+        except Exception:
+            pass
 
     db.delete(act)
     db.commit()
@@ -644,17 +671,13 @@ def download_activity_file(
         if act.form_id not in form_ids:
             raise HTTPException(status_code=403, detail="Access denied")
 
-    if not act.file_path or not os.path.exists(act.file_path):
+    if not act.file_path:
         raise HTTPException(status_code=404, detail="File not found")
 
-    ext = os.path.splitext(act.file_path)[1].lower()
-    media_map = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
-
-    return FileResponse(
-        path       = act.file_path,
-        filename   = act.original_filename or "document",
-        media_type = media_map.get(ext, "application/octet-stream"),
-    )
+    from services.storage import storage_service
+    from fastapi.responses import RedirectResponse
+    public_url = storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(act.file_path)
+    return RedirectResponse(url=public_url)
 
 
 # ─── HELPERS ──────────────────────────────────────────────────────────────────

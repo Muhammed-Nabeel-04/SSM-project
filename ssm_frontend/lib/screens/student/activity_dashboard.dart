@@ -59,10 +59,12 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
 
     final filtered = _filterCategory == 'all'
         ? activities
-        : activities.where((a) {
-            final type = a['activity_type'] as String? ?? '';
-            return _categoryOf(type) == _filterCategory;
-          }).toList();
+        : _filterCategory == 'deleted'
+            ? activities.where((a) => a['is_deleted'] == true).toList()
+            : activities.where((a) {
+                final type = a['activity_type'] as String? ?? '';
+                return _categoryOf(type) == _filterCategory;
+              }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -200,15 +202,26 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => _ActivityCard(
-                              activity: filtered[i],
-                              onDelete: canEdit
-                                  ? () => _deleteActivity(filtered[i]['id'])
-                                  : null,
-                              onReapply: canEdit
-                                  ? () => _reapplyActivity(filtered[i])
-                                  : null,
-                            ),
+                            (ctx, i) {
+                              final mentorStatus =
+                                  filtered[i]['mentor_status'] as String? ?? '';
+                              final isDeleted =
+                                  filtered[i]['is_deleted'] == true;
+                              return _ActivityCard(
+                                activity: filtered[i],
+                                onDelete: mentorStatus != 'approved' &&
+                                        !isDeleted
+                                    ? () => _deleteActivity(filtered[i]['id'])
+                                    : null,
+                                onReapply:
+                                    mentorStatus == 'rejected' && !isDeleted
+                                        ? () => _reapplyActivity(filtered[i])
+                                        : null,
+                                onRestore: isDeleted
+                                    ? () => _restoreActivity(filtered[i]['id'])
+                                    : null,
+                              );
+                            },
                             childCount: filtered.length,
                           ),
                         ),
@@ -233,16 +246,17 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
   Future<void> _deleteActivity(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      barrierDismissible: false, // Prevent accidental dismissal
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Activity?'),
         content: const Text(
             'This activity and its document will be permanently deleted.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child:
                 const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),
@@ -252,8 +266,52 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
     if (confirm != true || !mounted) return;
     try {
       await ApiService.deleteActivity(id);
-      _load();
+      await _load(); // Reload data to update status
+      if (!mounted) return;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Activity deleted successfully'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ));
     } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+    }
+  }
+
+  Future<void> _restoreActivity(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Restore Activity?'),
+        content: const Text('This will restore the deleted activity.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Restore',
+                  style: TextStyle(color: AppColors.primary))),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      await ApiService.restoreActivity(id);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Activity restored successfully'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ));
+    } on ApiException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
@@ -262,16 +320,17 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
   Future<void> _reapplyActivity(Map<String, dynamic> activity) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      barrierDismissible: false, // Prevent accidental dismissal
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Reapply Activity?'),
         content: const Text(
             'This will delete the rejected activity so you can submit a new one. Continue?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Yes, Reapply',
                   style: TextStyle(color: AppColors.primary))),
         ],
@@ -296,16 +355,17 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
 
     final confirm = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        barrierDismissible: false, // Prevent accidental dismissal
+        builder: (dialogContext) => AlertDialog(
               title: const Text('Submit Form?'),
               content: const Text(
                   'Once submitted, you cannot add or delete activities until the mentor completes their final academic review. Do you want to proceed?'),
               actions: [
                 TextButton(
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () => Navigator.pop(dialogContext, false),
                     child: const Text('Cancel')),
                 TextButton(
-                    onPressed: () => Navigator.pop(context, true),
+                    onPressed: () => Navigator.pop(dialogContext, true),
                     child: const Text('Submit',
                         style: TextStyle(fontWeight: FontWeight.bold))),
               ],
@@ -435,6 +495,7 @@ class _CategoryFilter extends StatelessWidget {
       ('development', 'Dev', Icons.emoji_objects_rounded),
       ('skill', 'Skill', Icons.trending_up_rounded),
       ('leadership', 'Lead', Icons.emoji_events_rounded),
+      ('deleted', 'Deleted', Icons.delete_outline_rounded),
     ];
     return SizedBox(
       height: 48,
@@ -476,7 +537,9 @@ class _ActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
   final VoidCallback? onDelete;
   final VoidCallback? onReapply;
-  const _ActivityCard({required this.activity, this.onDelete, this.onReapply});
+  final VoidCallback? onRestore;
+  const _ActivityCard(
+      {required this.activity, this.onDelete, this.onReapply, this.onRestore});
 
   @override
   Widget build(BuildContext context) {
@@ -597,7 +660,25 @@ class _ActivityCard extends StatelessWidget {
           ],
 
           // ── Delete / Reapply buttons ───────────────────────────────────
-          if (mentorStatus != 'approved') ...[
+          // ── Delete / Reapply / Restore buttons ─────────────────────────
+          if (activity['is_deleted'] == true) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: onRestore,
+                  icon: const Icon(Icons.restore_rounded,
+                      size: 16, color: AppColors.primary),
+                  label: const Text('Restore',
+                      style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                  style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4)),
+                ),
+              ],
+            ),
+          ] else if (mentorStatus != 'approved') ...[
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
