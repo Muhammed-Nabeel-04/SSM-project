@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
@@ -284,8 +285,13 @@ class _ActivityReviewCardState extends State<_ActivityReviewCard> {
                 ),
                 const SizedBox(height: 4),
                 TextButton.icon(
-                  onPressed: () =>
-                      context.push('/mentor/activity/${act['id']}/file'),
+                  onPressed: () async {
+                    final fileUrl = act['file_url'] as String?;
+                    if (fileUrl != null) {
+                      await launchUrl(Uri.parse(fileUrl),
+                          mode: LaunchMode.externalApplication);
+                    }
+                  },
                   icon: const Icon(Icons.open_in_new_rounded, size: 14),
                   label: const Text('View Document',
                       style: TextStyle(fontSize: 12)),

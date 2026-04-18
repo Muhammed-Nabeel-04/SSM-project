@@ -37,6 +37,7 @@ from models.ssm import (
 from services.security import get_current_user, require_mentor, require_student
 from services.scoring import calculate_and_save
 from services.notifications import push_notification
+from services.storage import storage_service
 
 router = APIRouter(prefix="/activity", tags=["Activities"])
 
@@ -709,6 +710,10 @@ def _serialize_activity(act: StudentActivity, include_student: bool = False) -> 
         "verified_at":    act.verified_at.isoformat()  if act.verified_at  else None,
         "has_file":       act.file_path is not None,
         "filename":       act.original_filename,
+        "file_url": (
+            storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(act.file_path)
+            if act.file_path else None
+        ),
         # Activity-specific data (only non-null fields)
         "data": {k: v for k, v in {
             "internal_gpa":         act.internal_gpa,

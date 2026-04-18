@@ -256,22 +256,35 @@ class _ActivityFileViewerState extends State<_ActivityFileViewer> {
   Future<void> _fetchUrl() async {
     try {
       final token = await TokenService.getToken();
-      final response = await http.get(
+      final client = http.Client();
+      final request = http.Request(
+        'GET',
         Uri.parse('${AppConfig.baseUrl}/activity/${widget.activityId}/file'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      // Backend redirects to Supabase URL
-      if (response.statusCode == 200 || response.statusCode == 302) {
+      )
+        ..headers['Authorization'] = 'Bearer $token'
+        ..followRedirects = false;
+
+      final streamedResponse = await client.send(request);
+      client.close();
+
+      // Capture redirect location (302 → Supabase public URL)
+      final location = streamedResponse.headers['location'];
+      if (location != null) {
         setState(() {
-          _publicUrl = response.headers['location'] ??
-              Uri.parse(
-                      '${AppConfig.baseUrl}/activity/${widget.activityId}/file')
-                  .toString();
+          _publicUrl = location;
+          _loading = false;
+        });
+      } else {
+        // No redirect — use response URL directly
+        setState(() {
+          _publicUrl =
+              '${AppConfig.baseUrl}/activity/${widget.activityId}/file';
           _loading = false;
         });
       }
-    } catch (_) {}
-    setState(() => _loading = false);
+    } catch (e) {
+      setState(() => _loading = false);
+    }
   }
 
   @override
