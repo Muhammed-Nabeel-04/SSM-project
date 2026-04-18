@@ -163,12 +163,6 @@ def get_current_user(
 
     payload = decode_token(token)
 
-    if not validate_session_in_db(db, token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired or logged out from another device",
-        )
-
     user_id = int(payload["sub"])
     user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
     if not user:

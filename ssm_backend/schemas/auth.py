@@ -49,6 +49,7 @@ class UserCreate(BaseModel):
     email:           EmailStr
     password:        str
     role:            UserRole
+    phone:           Optional[str] = None
     department_id:   Optional[int] = None
     mentor_id:       Optional[int] = None
     # Student profile fields (optional — can be set by admin on creation)
