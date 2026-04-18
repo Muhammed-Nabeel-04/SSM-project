@@ -13,6 +13,6 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "cd ssm_backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+startCommand = "cd ssm_backend && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

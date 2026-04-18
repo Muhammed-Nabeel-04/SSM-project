@@ -262,6 +262,14 @@ class ApiService {
     _handle(res);
   }
 
+  static Future<void> restoreActivity(int activityId) async {
+    final res = await http
+        .post(_url('/activity/$activityId/restore'),
+            headers: await _authHeaders())
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    _handle(res);
+  }
+
   static Future<Map<String, dynamic>> getMentorPendingActivities({
     int limit = 50,
     int offset = 0,

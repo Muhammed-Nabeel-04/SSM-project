@@ -185,7 +185,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
         email                = payload.email,
         password_hash        = hash_password(payload.password),
         role                 = payload.role,
-        phone                = payload.password,  # default password = phone; also store as phone
+        phone                = payload.phone,
         department_id        = payload.department_id,
         mentor_id            = payload.mentor_id,
         semester             = payload.semester,
