@@ -158,6 +158,7 @@ class SSMForm(Base):
     leadership = relationship("LeadershipData", back_populates="form", uselist=False, cascade="all, delete-orphan")
     calculated_score = relationship("CalculatedScore", back_populates="form", uselist=False, cascade="all, delete-orphan")
     documents = relationship("UploadedDocument", back_populates="form", cascade="all, delete-orphan")
+    activities = relationship("StudentActivity", foreign_keys="StudentActivity.form_id", back_populates="form")
 
 
 # ─── CATEGORY 1: ACADEMIC PERFORMANCE ────────────────────────────────────────

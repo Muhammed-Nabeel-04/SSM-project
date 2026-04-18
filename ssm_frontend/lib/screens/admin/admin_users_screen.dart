@@ -30,12 +30,21 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
   }
 
   Future<void> _loadRole(String role) async {
-    setState(() { _loading[role] = true; _error[role] = null; });
+    setState(() {
+      _loading[role] = true;
+      _error[role] = null;
+    });
     try {
       final data = await ApiService.getUsers(role: role);
-      setState(() { _users[role] = data['items'] ?? []; _loading[role] = false; });
+      setState(() {
+        _users[role] = data['items'] ?? [];
+        _loading[role] = false;
+      });
     } on ApiException catch (e) {
-      setState(() { _error[role] = e.message; _loading[role] = false; });
+      setState(() {
+        _error[role] = e.message;
+        _loading[role] = false;
+      });
     }
   }
 
@@ -69,8 +78,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
             icon: const Icon(Icons.person_add_rounded),
             tooltip: 'Add User',
             onPressed: () async {
-              await context.push('/admin/create-user');
-              for (final r in _roles) _loadRole(r);
+              final currentRole = _roles[_tab.index];
+              final createdRole = await context
+                  .push<String>('/admin/create-user', extra: currentRole);
+              if (createdRole != null) {
+                final idx = _roles.indexOf(createdRole);
+                if (idx >= 0) _tab.animateTo(idx);
+                _loadRole(createdRole);
+              } else {
+                for (final r in _roles) _loadRole(r);
+              }
             },
           ),
         ],
@@ -95,8 +112,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
           final users = _users[role] ?? [];
           if (users.isEmpty) {
             return Center(
-              child: Text('No $role accounts yet.',
-                  style: const TextStyle(color: AppColors.textSecondary)));
+                child: Text('No $role accounts yet.',
+                    style: const TextStyle(color: AppColors.textSecondary)));
           }
           return RefreshIndicator(
             onRefresh: () => _loadRole(role),
@@ -106,7 +123,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
               itemBuilder: (_, i) => _UserTile(
                 user: users[i],
                 role: role,
-                onToggle: () => _toggle(role, users[i]['id'], users[i]['is_active']),
+                onToggle: () =>
+                    _toggle(role, users[i]['id'], users[i]['is_active']),
                 onTap: () => _showUserDetail(context, users[i], role),
               ),
             ),
@@ -116,7 +134,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
     );
   }
 
-  void _showUserDetail(BuildContext context, Map<String, dynamic> user, String role) {
+  void _showUserDetail(
+      BuildContext context, Map<String, dynamic> user, String role) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -134,10 +153,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2)),
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -154,7 +174,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                   ),
                 ),
                 const SizedBox(width: 14),
-                Expanded(child: Column(
+                Expanded(
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(user['name'] ?? '',
@@ -166,7 +187,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                   ],
                 )),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: (user['is_active'] == true
                             ? AppColors.success
@@ -192,16 +214,21 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                 ),
               ]),
               const Divider(height: 28),
-              _DetailRow(Icons.badge_outlined, 'Register No.', user['register_number']),
+              _DetailRow(Icons.badge_outlined, 'Register No.',
+                  user['register_number']),
               _DetailRow(Icons.email_outlined, 'Email', user['email']),
               _DetailRow(Icons.phone_outlined, 'Phone', user['phone']),
-              _DetailRow(Icons.business_rounded, 'Department', user['department_name']),
+              _DetailRow(Icons.business_rounded, 'Department',
+                  user['department_name']),
               if (user['mentor_name'] != null)
-                _DetailRow(Icons.supervisor_account_rounded, 'Mentor', user['mentor_name']),
+                _DetailRow(Icons.supervisor_account_rounded, 'Mentor',
+                    user['mentor_name']),
               if (user['semester'] != null)
-                _DetailRow(Icons.numbers_rounded, 'Semester', user['semester'].toString()),
+                _DetailRow(Icons.numbers_rounded, 'Semester',
+                    user['semester'].toString()),
               if (user['batch'] != null)
-                _DetailRow(Icons.calendar_today_rounded, 'Batch', user['batch']),
+                _DetailRow(
+                    Icons.calendar_today_rounded, 'Batch', user['batch']),
               if (user['section'] != null)
                 _DetailRow(Icons.group_rounded, 'Section', user['section']),
               const SizedBox(height: 20),
@@ -236,7 +263,11 @@ class _UserTile extends StatelessWidget {
   final String role;
   final VoidCallback onToggle;
   final VoidCallback onTap;
-  const _UserTile({required this.user, required this.role, required this.onToggle, required this.onTap});
+  const _UserTile(
+      {required this.user,
+      required this.role,
+      required this.onToggle,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -262,13 +293,17 @@ class _UserTile extends StatelessWidget {
         title: Text(user['name'] ?? '',
             style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: isActive ? AppColors.textPrimary : AppColors.textSecondary)),
-        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                color: isActive
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary)),
+        subtitle:
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(user['register_number'] ?? user['email'] ?? '',
               style: const TextStyle(fontSize: 12)),
           if (user['department_name'] != null)
             Text(user['department_name'],
-                style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
+                style:
+                    const TextStyle(fontSize: 11, color: AppColors.textLight)),
         ]),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           Container(
@@ -279,8 +314,8 @@ class _UserTile extends StatelessWidget {
               border: Border.all(color: color.withOpacity(0.3)),
             ),
             child: Text(isActive ? 'Active' : 'Inactive',
-                style: TextStyle(color: color, fontSize: 11,
-                    fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: color, fontSize: 11, fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right_rounded,
@@ -312,8 +347,8 @@ class _DetailRow extends StatelessWidget {
                 color: AppColors.textSecondary)),
         Expanded(
           child: Text(value!,
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textPrimary)),
+              style:
+                  const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
         ),
       ]),
     );

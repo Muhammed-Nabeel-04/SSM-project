@@ -30,22 +30,31 @@ def mentor_dashboard(
     current_user: User = Depends(require_mentor),
     db: Session = Depends(get_db),
 ):
-    forms = db.query(SSMForm).filter(
-        SSMForm.mentor_id == current_user.id,
-        SSMForm.status.in_([FormStatus.SUBMITTED, FormStatus.MENTOR_REVIEW])
+    from models.activity import StudentActivity, MentorStatus, OCRStatus
+    form_ids = [
+        f.id for f in db.query(SSMForm).filter(
+            SSMForm.mentor_id == current_user.id,
+            SSMForm.status.in_([FormStatus.SUBMITTED, FormStatus.MENTOR_REVIEW])
+        ).all()
+    ]
+
+    pending_activities = db.query(StudentActivity).filter(
+        StudentActivity.form_id.in_(form_ids),
+        StudentActivity.mentor_status == MentorStatus.PENDING,
+        StudentActivity.ocr_status != OCRStatus.FAILED,
     ).all()
 
     pending = [
         {
-            "form_id":        f.id,
-            "student_name":   f.student.name,
-            "register_number":f.student.register_number,
-            "academic_year":  f.academic_year,
-            "status":         f.status,
-            "submitted_at":   f.submitted_at,
-            "preview_score":  f.calculated_score.grand_total if f.calculated_score else None,
+            "form_id":        a.form_id,
+            "student_name":   a.student.name,
+            "register_number":a.student.register_number,
+            "academic_year":  a.form.academic_year,
+            "status":         a.form.status,
+            "submitted_at":   a.submitted_at,
+            "preview_score":  a.form.calculated_score.grand_total if a.form.calculated_score else None,
         }
-        for f in forms
+        for a in pending_activities
     ]
     return {"mentor": current_user.name, "pending_reviews": pending}
 
@@ -103,10 +112,35 @@ def get_form_details(
         },
         "academic_year": form.academic_year,
         "status":        form.status,
-        "academic":      _serialize(form.academic),
-        "development":   _serialize(form.development),
-        "skill":         _serialize(form.skill),
-        "leadership":    _serialize(form.leadership),
+        "activities": [
+            {
+                "id": a.id,
+                "activity_type": a.activity_type.value,
+                "mentor_status": a.mentor_status.value,
+                "ocr_status": a.ocr_status.value,
+                "mentor_note": a.mentor_note,
+                "has_file": a.file_path is not None,
+                "filename": a.original_filename,
+                "submitted_at": a.submitted_at.isoformat() if a.submitted_at else None,
+                "data": {k: v for k, v in {
+                    "internal_gpa": a.internal_gpa,
+                    "university_gpa": a.university_gpa,
+                    "attendance_pct": a.attendance_pct,
+                    "nptel_tier": a.nptel_tier,
+                    "platform_name": a.platform_name,
+                    "course_name": a.course_name,
+                    "internship_company": a.internship_company,
+                    "competition_name": a.competition_name,
+                    "competition_result": a.competition_result,
+                    "placement_company": a.placement_company,
+                    "placement_lpa": a.placement_lpa,
+                    "role_name": a.role_name,
+                    "event_name": a.event_name,
+                    "community_org": a.community_org,
+                }.items() if v is not None},
+            }
+            for a in form.activities
+        ],
         "documents": [
             {
                 "id":                  d.id,

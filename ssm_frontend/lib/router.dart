@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'services/token_service.dart';
 
 import 'config/constants.dart'; // Added to ensure AppColors and AppConfig are accessible
 import 'services/auth_provider.dart';
@@ -213,7 +215,9 @@ GoRouter buildRouter(AuthProvider authProvider) {
       ),
       GoRoute(
         path: '/admin/create-user',
-        builder: (c, s) => const AdminCreateUserScreen(),
+        builder: (c, s) => AdminCreateUserScreen(
+          initialRole: s.extra as String?,
+        ),
       ),
       GoRoute(
         path: '/admin/import',
@@ -231,38 +235,70 @@ GoRouter buildRouter(AuthProvider authProvider) {
   );
 }
 
-class _ActivityFileViewer extends StatelessWidget {
+class _ActivityFileViewer extends StatefulWidget {
   final int activityId;
   const _ActivityFileViewer({required this.activityId});
 
   @override
+  State<_ActivityFileViewer> createState() => _ActivityFileViewerState();
+}
+
+class _ActivityFileViewerState extends State<_ActivityFileViewer> {
+  String? _publicUrl;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUrl();
+  }
+
+  Future<void> _fetchUrl() async {
+    try {
+      final token = await TokenService.getToken();
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/activity/${widget.activityId}/file'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      // Backend redirects to Supabase URL
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        setState(() {
+          _publicUrl = response.headers['location'] ??
+              Uri.parse(
+                      '${AppConfig.baseUrl}/activity/${widget.activityId}/file')
+                  .toString();
+          _loading = false;
+        });
+      }
+    } catch (_) {}
+    setState(() => _loading = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final url = '${AppConfig.baseUrl}/activity/$activityId/file';
     return Scaffold(
       appBar: AppBar(title: const Text('View Document')),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.picture_as_pdf_rounded,
-              size: 64,
-              color: AppColors.primary,
-            ),
+            const Icon(Icons.picture_as_pdf_rounded,
+                size: 64, color: AppColors.primary),
             const SizedBox(height: 16),
-            const Text(
-              'Open document in browser:',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            const Text('Open document in browser:',
+                style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               icon: const Icon(Icons.open_in_browser_rounded),
               label: const Text('Open Document'),
-              onPressed: () async {
-                final uri = Uri.parse(url);
-                // ignore: deprecated_member_use
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              },
+              onPressed: _loading || _publicUrl == null
+                  ? null
+                  : () async {
+                      final uri = Uri.parse(_publicUrl!);
+                      // ignore: deprecated_member_use
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
+                    },
             ),
           ],
         ),

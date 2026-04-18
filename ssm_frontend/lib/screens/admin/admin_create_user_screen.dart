@@ -6,7 +6,8 @@ import '../../services/api_service.dart';
 import '../../widgets/common_widgets.dart';
 
 class AdminCreateUserScreen extends StatefulWidget {
-  const AdminCreateUserScreen({super.key});
+  final String? initialRole;
+  const AdminCreateUserScreen({super.key, this.initialRole});
 
   @override
   State<AdminCreateUserScreen> createState() => _AdminCreateUserScreenState();
@@ -19,7 +20,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
 
-  String _role = 'student';
+  late String _role;
   int? _deptId;
   int? _mentorId;
   int? _semester;
@@ -38,6 +39,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
   @override
   void initState() {
     super.initState();
+    _role = widget.initialRole ?? 'student';
     _loadDepartments();
   }
 
@@ -45,11 +47,15 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
     try {
       final depts = await ApiService.getDepartments();
       setState(() {
-        _departments = depts.cast<Map<String, dynamic>>();
+        _departments = depts.whereType<Map<String, dynamic>>().toList();
         _loadingDepts = false;
       });
-    } catch (_) {
-      setState(() => _loadingDepts = false);
+    } catch (e) {
+      setState(() {
+        _loadingDepts = false;
+        _message = 'Failed to load departments: $e';
+        _success = false;
+      });
     }
   }
 
@@ -61,11 +67,15 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
     try {
       final mentors = await ApiService.getMentors(departmentId: deptId);
       setState(() {
-        _mentors = mentors.cast<Map<String, dynamic>>();
+        _mentors = mentors.whereType<Map<String, dynamic>>().toList();
         _loadingMentors = false;
       });
-    } catch (_) {
-      setState(() => _loadingMentors = false);
+    } catch (e) {
+      setState(() {
+        _loadingMentors = false;
+        _message = 'Failed to load mentors: $e';
+        _success = false;
+      });
     }
   }
 
@@ -152,18 +162,22 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
       _phoneCtrl.clear();
       _batchCtrl.clear();
       _sectionCtrl.clear();
-      setState(() {
-        _saving = false;
-        _success = true;
-        _message = 'User created! Default password = phone number.';
-        _mentorId = null;
-        _semester = null;
-      });
+      if (mounted) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context, _role);
+        }
+      }
     } on ApiException catch (e) {
       setState(() {
         _saving = false;
         _success = false;
         _message = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _saving = false;
+        _success = false;
+        _message = "Unexpected error: $e";
       });
     }
   }

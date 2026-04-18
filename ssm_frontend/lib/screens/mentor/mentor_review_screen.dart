@@ -40,34 +40,39 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
   Future<void> _load() async {
     try {
       final d = await ApiService.getMentorFormDetails(widget.formId);
-      setState(() { _data = d; _loading = false; });
+      setState(() {
+        _data = d;
+        _loading = false;
+      });
     } on ApiException catch (e) {
       setState(() => _loading = false);
     }
   }
 
   Map<String, dynamic> _buildPayload() => {
-    'mentor_feedback': _mentorFeedback,
-    'technical_skill': _technicalSkill,
-    'soft_skill': _softSkill,
-    'discipline_level': _disciplineLevel,
-    'dress_code_level': _dressCode,
-    'dept_contribution': _deptContrib,
-    'social_media_level': _socialMedia,
-    'late_entries': _lateEntries,
-    'innovation_initiative': _innovationInit,
-    'team_management_leadership': _teamManagement,
-    'remarks': _remarksCtrl.text.trim(),
-  };
+        'mentor_feedback': _mentorFeedback,
+        'technical_skill': _technicalSkill,
+        'soft_skill': _softSkill,
+        'discipline_level': _disciplineLevel,
+        'dress_code_level': _dressCode,
+        'dept_contribution': _deptContrib,
+        'social_media_level': _socialMedia,
+        'late_entries': _lateEntries,
+        'innovation_initiative': _innovationInit,
+        'team_management_leadership': _teamManagement,
+        'remarks': _remarksCtrl.text.trim(),
+      };
 
   Future<void> _submitReview() async {
     setState(() => _submitting = true);
     try {
-      final res = await ApiService.submitMentorReview(widget.formId, _buildPayload());
+      final res =
+          await ApiService.submitMentorReview(widget.formId, _buildPayload());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✓ Review submitted. Final score: ${res['updated_score']?['grand_total']?.toStringAsFixed(0)} pts'),
+            content: Text(
+                '✓ Review submitted. Final score: ${res['updated_score']?['grand_total']?.toStringAsFixed(0)} pts'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -76,8 +81,8 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
     } on ApiException catch (e) {
       setState(() => _submitting = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: AppColors.error));
       }
     }
   }
@@ -94,9 +99,12 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
           maxLines: 3,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.rejected),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppColors.rejected),
             onPressed: () => Navigator.pop(context, reasonCtrl.text),
             child: const Text('Reject'),
           ),
@@ -106,15 +114,16 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
     if (reason == null || reason.isEmpty) return;
     await ApiService.rejectForm(widget.formId, reason);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Form rejected'), backgroundColor: AppColors.rejected));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Form rejected'), backgroundColor: AppColors.rejected));
       context.pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     final student = _data?['student'];
     final currentScore = _data?['current_score'];
@@ -125,36 +134,95 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
         loading: _submitting,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // Student info card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(children: [
-                  const CircleAvatar(backgroundColor: AppColors.primary,
+                  const CircleAvatar(
+                      backgroundColor: AppColors.primary,
                       child: Icon(Icons.person_rounded, color: Colors.white)),
                   const SizedBox(width: 12),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(student?['name'] ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text(student?['register_number'] ?? '',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                  ]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(student?['name'] ?? '',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 15)),
+                        Text(student?['register_number'] ?? '',
+                            style: const TextStyle(
+                                color: AppColors.textSecondary, fontSize: 13)),
+                      ]),
                   const Spacer(),
                   if (currentScore != null)
                     Column(children: [
-                      Text('${(currentScore['grand_total'] as num).toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.w800,
-                              fontSize: 20, color: AppColors.primary)),
+                      Text(
+                          '${(currentScore['grand_total'] as num).toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 20,
+                              color: AppColors.primary)),
                       const Text('Auto Score',
-                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                          style: TextStyle(
+                              fontSize: 10, color: AppColors.textSecondary)),
                     ]),
                 ]),
               ),
             ),
 
             const SizedBox(height: 16),
+
+            // ── SUBMITTED ACTIVITIES ──────────────────────────
+            if ((_data?['activities'] as List? ?? []).isNotEmpty) ...[
+              const Text('Submitted Activities',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              const SizedBox(height: 8),
+              ...(_data!['activities'] as List).map((a) {
+                final type = (a['activity_type'] as String)
+                    .replaceAll('_', ' ')
+                    .toUpperCase();
+                final status = a['mentor_status'] as String;
+                final data = a['data'] as Map? ?? {};
+                final color = status == 'approved'
+                    ? AppColors.success
+                    : status == 'rejected'
+                        ? AppColors.error
+                        : AppColors.mentorReview;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(type,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                    subtitle: data.isNotEmpty
+                        ? Text(
+                            data.entries
+                                .take(2)
+                                .map((e) => '${e.key}: ${e.value}')
+                                .join(' • '),
+                            style: const TextStyle(fontSize: 11))
+                        : null,
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: color.withOpacity(0.3)),
+                      ),
+                      child: Text(status.toUpperCase(),
+                          style: TextStyle(
+                              color: color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
 
             // ── ACADEMIC FEEDBACK ─────────────────────────────
             Card(
@@ -171,9 +239,13 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _mentorFeedback,
                     onChanged: (v) => setState(() => _mentorFeedback = v!),
                     items: const [
-                      DropdownMenuItem(value: 'average', child: Text('Average (5 pts)')),
-                      DropdownMenuItem(value: 'good', child: Text('Good (10 pts)')),
-                      DropdownMenuItem(value: 'excellent', child: Text('Excellent (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'average', child: Text('Average (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'good', child: Text('Good (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'excellent',
+                          child: Text('Excellent (15 pts)')),
                     ],
                   ),
                 ]),
@@ -197,9 +269,16 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _technicalSkill,
                     onChanged: (v) => setState(() => _technicalSkill = v!),
                     items: const [
-                      DropdownMenuItem(value: 'basic', child: Text('Basic — Limited application (5 pts)')),
-                      DropdownMenuItem(value: 'good', child: Text('Good — Applies with guidance (10 pts)')),
-                      DropdownMenuItem(value: 'excellent', child: Text('Excellent — Independent problem solver (20 pts)')),
+                      DropdownMenuItem(
+                          value: 'basic',
+                          child: Text('Basic — Limited application (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'good',
+                          child: Text('Good — Applies with guidance (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'excellent',
+                          child: Text(
+                              'Excellent — Independent problem solver (20 pts)')),
                     ],
                   ),
                   AppDropdown<String>(
@@ -207,9 +286,13 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _softSkill,
                     onChanged: (v) => setState(() => _softSkill = v!),
                     items: const [
-                      DropdownMenuItem(value: 'average', child: Text('Average (5 pts)')),
-                      DropdownMenuItem(value: 'good', child: Text('Good (10 pts)')),
-                      DropdownMenuItem(value: 'excellent', child: Text('Excellent (20 pts)')),
+                      DropdownMenuItem(
+                          value: 'average', child: Text('Average (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'good', child: Text('Good (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'excellent',
+                          child: Text('Excellent (20 pts)')),
                     ],
                   ),
                 ]),
@@ -233,16 +316,22 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _disciplineLevel,
                     onChanged: (v) => setState(() => _disciplineLevel = v!),
                     items: const [
-                      DropdownMenuItem(value: 'major', child: Text('Major Violations (0 pts)')),
-                      DropdownMenuItem(value: 'minor', child: Text('Minor Issues (10 pts)')),
-                      DropdownMenuItem(value: 'no_violations', child: Text('No Violations — Exemplary (20 pts)')),
+                      DropdownMenuItem(
+                          value: 'major',
+                          child: Text('Major Violations (0 pts)')),
+                      DropdownMenuItem(
+                          value: 'minor', child: Text('Minor Issues (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'no_violations',
+                          child: Text('No Violations — Exemplary (20 pts)')),
                     ],
                   ),
                   Row(children: [
                     Checkbox(
                         value: _lateEntries,
                         onChanged: (v) => setState(() => _lateEntries = v!)),
-                    const Text('Frequent late entries (reduces punctuality score)',
+                    const Text(
+                        'Frequent late entries (reduces punctuality score)',
                         style: TextStyle(fontSize: 13)),
                   ]),
                   const SizedBox(height: 6),
@@ -251,9 +340,15 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _dressCode,
                     onChanged: (v) => setState(() => _dressCode = v!),
                     items: const [
-                      DropdownMenuItem(value: 'generally_follows', child: Text('Generally Follows (5 pts)')),
-                      DropdownMenuItem(value: 'highly_regular', child: Text('Highly Regular (10 pts)')),
-                      DropdownMenuItem(value: 'consistent', child: Text('100% Consistent (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'generally_follows',
+                          child: Text('Generally Follows (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'highly_regular',
+                          child: Text('Highly Regular (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'consistent',
+                          child: Text('100% Consistent (15 pts)')),
                     ],
                   ),
                   AppDropdown<String>(
@@ -262,9 +357,16 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     onChanged: (v) => setState(() => _deptContrib = v!),
                     items: const [
                       DropdownMenuItem(value: 'none', child: Text('None')),
-                      DropdownMenuItem(value: 'minor_idea', child: Text('Minor Idea (5 pts)')),
-                      DropdownMenuItem(value: 'proposed_useful', child: Text('Proposed Useful Idea (15 pts)')),
-                      DropdownMenuItem(value: 'implemented_impactful', child: Text('Implemented Impactful Initiative (25 pts)')),
+                      DropdownMenuItem(
+                          value: 'minor_idea',
+                          child: Text('Minor Idea (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'proposed_useful',
+                          child: Text('Proposed Useful Idea (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'implemented_impactful',
+                          child: Text(
+                              'Implemented Impactful Initiative (25 pts)')),
                     ],
                   ),
                   AppDropdown<String>(
@@ -273,11 +375,20 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     onChanged: (v) => setState(() => _socialMedia = v!),
                     items: const [
                       DropdownMenuItem(value: 'none', child: Text('None')),
-                      DropdownMenuItem(value: 'minimal', child: Text('Minimal (5 pts)')),
-                      DropdownMenuItem(value: 'occasional', child: Text('Occasional (10 pts)')),
-                      DropdownMenuItem(value: 'participates_shares', child: Text('Participates & Shares (15 pts)')),
-                      DropdownMenuItem(value: 'regularly_contributes', child: Text('Regularly Contributes (20 pts)')),
-                      DropdownMenuItem(value: 'active_creates', child: Text('Actively Creates & Manages (25 pts)')),
+                      DropdownMenuItem(
+                          value: 'minimal', child: Text('Minimal (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'occasional',
+                          child: Text('Occasional (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'participates_shares',
+                          child: Text('Participates & Shares (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'regularly_contributes',
+                          child: Text('Regularly Contributes (20 pts)')),
+                      DropdownMenuItem(
+                          value: 'active_creates',
+                          child: Text('Actively Creates & Manages (25 pts)')),
                     ],
                   ),
                 ]),
@@ -301,9 +412,15 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     value: _teamManagement,
                     onChanged: (v) => setState(() => _teamManagement = v!),
                     items: const [
-                      DropdownMenuItem(value: 'limited', child: Text('Limited Teamwork (5 pts)')),
-                      DropdownMenuItem(value: 'good', child: Text('Good Team Player (10 pts)')),
-                      DropdownMenuItem(value: 'excellent', child: Text('Excellent Team Leader (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'limited',
+                          child: Text('Limited Teamwork (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'good',
+                          child: Text('Good Team Player (10 pts)')),
+                      DropdownMenuItem(
+                          value: 'excellent',
+                          child: Text('Excellent Team Leader (15 pts)')),
                     ],
                   ),
                   AppDropdown<String>(
@@ -312,9 +429,15 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     onChanged: (v) => setState(() => _innovationInit = v!),
                     items: const [
                       DropdownMenuItem(value: 'none', child: Text('None')),
-                      DropdownMenuItem(value: 'minor', child: Text('Minor Idea (5 pts)')),
-                      DropdownMenuItem(value: 'proposed', child: Text('Proposed Useful Idea (15 pts)')),
-                      DropdownMenuItem(value: 'implemented', child: Text('Implemented Impactful Initiative (25 pts)')),
+                      DropdownMenuItem(
+                          value: 'minor', child: Text('Minor Idea (5 pts)')),
+                      DropdownMenuItem(
+                          value: 'proposed',
+                          child: Text('Proposed Useful Idea (15 pts)')),
+                      DropdownMenuItem(
+                          value: 'implemented',
+                          child: Text(
+                              'Implemented Impactful Initiative (25 pts)')),
                     ],
                   ),
                 ]),
@@ -327,17 +450,21 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Mentor Remarks',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _remarksCtrl,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                        hintText: 'Optional remarks for the student and HOD...'),
-                  ),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Mentor Remarks',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _remarksCtrl,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                            hintText:
+                                'Optional remarks for the student and HOD...'),
+                      ),
+                    ]),
               ),
             ),
 
@@ -348,7 +475,8 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _rejectForm,
-                  icon: const Icon(Icons.close_rounded, color: AppColors.rejected),
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppColors.rejected),
                   label: const Text('Reject',
                       style: TextStyle(color: AppColors.rejected)),
                   style: OutlinedButton.styleFrom(
