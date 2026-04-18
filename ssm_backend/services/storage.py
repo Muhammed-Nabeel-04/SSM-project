@@ -36,7 +36,7 @@ class SupabaseStorageService:
             res = self.client.storage.from_(self.bucket_name).upload(
                 file_path,
                 file_bytes,
-                file_options={"content-type": content_type, "upsert": True}
+                file_options={"content-type": content_type, "upsert": "true"}
             )
             # Generate the public URL
             public_url = self.client.storage.from_(self.bucket_name).get_public_url(file_path)

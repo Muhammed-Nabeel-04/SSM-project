@@ -10,6 +10,8 @@ class AppConfig {
   static const String _defaultUrl =
       'https://noisy-unit-b55c.nabeelmdnabeel1229.workers.dev';
 
+  // static const String _defaultUrl = 'http://10.0.2.2:8000';
+
   static const String _keyBackendUrl = 'backend_url';
   static late SharedPreferences _prefs;
 
