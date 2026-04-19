@@ -43,6 +43,7 @@ dependencies:
   share_plus: ^10.0.0         # Sharing / CSV export
   path_provider: ^2.1.4       # File system access
   url_launcher: ^6.3.0        # Open external browser/URLs
+  webview_flutter: ^4.4.0     # Added for in-app web views
 
 dev_dependencies:
   flutter_test:

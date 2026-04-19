@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../widgets/common_widgets.dart';
+import '../shared/document_viewer_screen.dart';
 
 class MentorReviewScreen extends StatefulWidget {
   final int formId;
@@ -44,9 +45,119 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
         _data = d;
         _loading = false;
       });
-    } on ApiException catch (e) {
+    } on ApiException catch (_) {
       setState(() => _loading = false);
     }
+  }
+
+  // --- NEW METHOD ADDED HERE ---
+  void _showActivitySheet(BuildContext context, Map<String, dynamic> a) {
+    if (a['mentor_status'] != 'pending') return;
+    final noteCtrl = TextEditingController();
+    final type =
+        (a['activity_type'] as String).replaceAll('_', ' ').toUpperCase();
+    final data = a['data'] as Map? ?? {};
+    final fileUrl = a['file_url'] as String?;
+    final filename = a['filename'] as String?;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setS) => Padding(
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(type,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 16)),
+                const SizedBox(height: 10),
+                if (data.isNotEmpty) ...[
+                  ...data.entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text('${e.key}: ${e.value}',
+                            style: const TextStyle(
+                                fontSize: 13, color: AppColors.textSecondary)),
+                      )),
+                  const SizedBox(height: 10),
+                ],
+                if (fileUrl != null) ...[
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DocumentViewerScreen(
+                              url: fileUrl,
+                              title: filename ?? 'Document',
+                            ),
+                          ));
+                    },
+                    icon: const Icon(Icons.visibility_rounded, size: 16),
+                    label: const Text('View Document'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                TextFormField(
+                  controller: noteCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Note (required for rejection)',
+                    hintText: 'e.g. Certificate looks valid / Name mismatch',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        if (noteCtrl.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Note required for rejection'),
+                                  backgroundColor: AppColors.error));
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        await ApiService.rejectActivity(
+                            a['id'], noteCtrl.text.trim());
+                        _load();
+                      },
+                      icon: const Icon(Icons.cancel_outlined, size: 16),
+                      label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ApiService.approveActivity(a['id'],
+                            note: noteCtrl.text.trim().isEmpty
+                                ? null
+                                : noteCtrl.text.trim());
+                        _load();
+                      },
+                      icon: const Icon(Icons.check_circle_rounded, size: 16),
+                      label: const Text('Approve'),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.success),
+                    ),
+                  ),
+                ]),
+              ]),
+        ),
+      ),
+    );
   }
 
   Map<String, dynamic> _buildPayload() => {
@@ -129,14 +240,21 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
     final currentScore = _data?['current_score'];
 
     return Scaffold(
-      appBar: AppBar(title: Text('Review: ${student?['name'] ?? ''}')),
+      appBar: AppBar(
+        title: Text('Review: ${student?['name'] ?? ''}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _load,
+          ),
+        ],
+      ),
       body: LoadingOverlay(
         loading: _submitting,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Student info card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -171,10 +289,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 ]),
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // ── SUBMITTED ACTIVITIES ──────────────────────────
+            // Submitted Activities
             if ((_data?['activities'] as List? ?? []).isNotEmpty) ...[
               const Text('Submitted Activities',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
@@ -193,6 +310,7 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
+                    onTap: () => _showActivitySheet(context, a),
                     title: Text(type,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 13)),
@@ -204,27 +322,32 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                                 .join(' • '),
                             style: const TextStyle(fontSize: 11))
                         : null,
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: color.withOpacity(0.3)),
+                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: color.withOpacity(0.3)),
+                        ),
+                        child: Text(status.toUpperCase(),
+                            style: TextStyle(
+                                color: color,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700)),
                       ),
-                      child: Text(status.toUpperCase(),
-                          style: TextStyle(
-                              color: color,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700)),
-                    ),
+                      if (status == 'pending')
+                        const Icon(Icons.chevron_right_rounded,
+                            color: AppColors.textLight, size: 18),
+                    ]),
                   ),
                 );
               }),
               const SizedBox(height: 16),
             ],
 
-            // ── ACADEMIC FEEDBACK ─────────────────────────────
+            // Academic Feedback
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -251,10 +374,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 ]),
               ),
             ),
-
             const SizedBox(height: 12),
 
-            // ── SKILL RATINGS ─────────────────────────────────
+            // Skill Ratings
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -298,10 +420,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 ]),
               ),
             ),
-
             const SizedBox(height: 12),
 
-            // ── DISCIPLINE ────────────────────────────────────
+            // Discipline
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -394,10 +515,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 ]),
               ),
             ),
-
             const SizedBox(height: 12),
 
-            // ── LEADERSHIP MENTOR RATINGS ─────────────────────
+            // Leadership
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -443,10 +563,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 ]),
               ),
             ),
-
             const SizedBox(height: 12),
 
-            // ── REMARKS ───────────────────────────────────────
+            // Remarks
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -467,10 +586,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                     ]),
               ),
             ),
-
             const SizedBox(height: 24),
 
-            // ── ACTION BUTTONS ────────────────────────────────
+            // Action Buttons
             Row(children: [
               Expanded(
                 child: OutlinedButton.icon(

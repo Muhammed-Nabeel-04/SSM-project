@@ -175,6 +175,25 @@ def promote_students(
 
     db.commit()
 
+    # Notify promoted students
+    from services.notifications import push_notification
+    for p in promoted:
+        push_notification(
+            db, p['id'],
+            title="Semester Promoted 🎓",
+            body=f"You have been promoted to Semester {p['new_semester']} (Year {p['new_year']}) for {new_academic_year}.",
+            icon="star",
+        )
+    # Notify graduated students
+    for g in graduated:
+        push_notification(
+            db, g['id'],
+            title="Congratulations, Graduate! 🎓",
+            body=f"You have completed all 8 semesters and graduated. Best wishes!",
+            icon="star",
+        )
+    db.commit()
+
     return {
         "message":          f"Promotion complete → Semester {s.current_semester}, {s.academic_year}",
         "new_semester":     s.current_semester,

@@ -152,6 +152,16 @@ def toggle_user_active(
         raise HTTPException(status_code=404, detail="User not found")
     user.is_active = not user.is_active
     db.commit()
+
+    from services.notifications import push_notification
+    push_notification(
+        db, user.id,
+        title="Account " + ("Activated ✅" if user.is_active else "Deactivated ⚠️"),
+        body=f"Your account has been {'activated' if user.is_active else 'deactivated'} by the admin.",
+        icon="check" if user.is_active else "warning",
+    )
+    db.commit()
+
     return {"user_id": user_id, "is_active": user.is_active}
 
 

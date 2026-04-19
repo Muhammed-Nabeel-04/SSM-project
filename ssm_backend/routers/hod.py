@@ -44,8 +44,7 @@ def hod_dashboard(
 
     pending = db.query(SSMForm).filter(
         SSMForm.student_id.in_(student_ids),
-        SSMForm.status.in_([FormStatus.HOD_REVIEW, FormStatus.SUBMITTED,
-                             FormStatus.MENTOR_REVIEW])
+        SSMForm.status == FormStatus.HOD_REVIEW
     ).all()
 
     approved = db.query(SSMForm).filter(
@@ -143,6 +142,13 @@ def approve_form(
             body=f"Your SSM form for {form.academic_year} has been approved! Final score: {score_row.grand_total:.1f} ({score_row.star_rating}★).",
             icon="star",
         )
+        if form.mentor_id:
+            push_notification(
+                db, form.mentor_id,
+                title="Student Form Approved ✅",
+                body=f"{form.student.name}'s SSM form for {form.academic_year} has been approved by HOD. Final score: {score_row.grand_total:.1f} ({score_row.star_rating}★).",
+                icon="check",
+            )
         db.commit()
         return {
             "message": "Form approved. Score locked.",
@@ -154,13 +160,19 @@ def approve_form(
     else:
         form.status = FormStatus.REJECTED
         form.rejection_reason = payload.remarks
-        # ── Notify student ────────────────────────────────────────────────────────
         push_notification(
             db, form.student_id,
             title="Form Rejected by HOD ⚠️",
             body=f"Your SSM form for {form.academic_year} was rejected by the HOD: {payload.remarks}",
             icon="warning",
         )
+        if form.mentor_id:
+            push_notification(
+                db, form.mentor_id,
+                title="Form Rejected by HOD ⚠️",
+                body=f"{form.student.name}'s form was rejected by HOD: {payload.remarks}",
+                icon="warning",
+            )
         db.commit()
         return {"message": "Form rejected by HOD. Student can re-submit."}
 

@@ -9,6 +9,7 @@ from schemas.ssm import MentorReview
 from services.security import require_mentor
 from services.scoring import calculate_and_save
 from services.notifications import push_notification
+from services.storage import storage_service
 
 router = APIRouter(prefix="/mentor", tags=["Mentor"])
 
@@ -121,6 +122,10 @@ def get_form_details(
                 "mentor_note": a.mentor_note,
                 "has_file": a.file_path is not None,
                 "filename": a.original_filename,
+                "file_url": (
+                    storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(a.file_path)
+                    if a.file_path else None
+                ),
                 "submitted_at": a.submitted_at.isoformat() if a.submitted_at else None,
                 "data": {k: v for k, v in {
                     "internal_gpa": a.internal_gpa,
@@ -204,6 +209,21 @@ def submit_review(
         body=f"Your SSM form for {form.academic_year} has been reviewed by your mentor and forwarded to the HOD.",
         icon="check",
     )
+    # Notify HOD
+    if form.hod_id or form.student.department_id:
+        from models.user import User as UserModel, UserRole
+        hod = db.query(UserModel).filter(
+            UserModel.department_id == form.student.department_id,
+            UserModel.role == UserRole.HOD,
+            UserModel.is_active == True,
+        ).first()
+        if hod:
+            push_notification(
+                db, hod.id,
+                title="Form Ready for HOD Review 📋",
+                body=f"{form.student.name}'s SSM form for {form.academic_year} has been reviewed by mentor and is awaiting your approval.",
+                icon="info",
+            )
     db.commit()
 
     return {

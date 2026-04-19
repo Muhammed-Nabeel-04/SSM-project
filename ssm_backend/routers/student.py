@@ -14,6 +14,7 @@ from models.document import UploadedDocument, DocumentCategory, VerificationStat
 from schemas.ssm import FullFormSubmit, FormStatusOut, ScoreBreakdown
 from services.security import require_student
 from services.scoring import calculate_and_save
+from services.notifications import push_notification
 from config import settings
 
 router = APIRouter(prefix="/student", tags=["Student"])
@@ -72,6 +73,17 @@ def submit_form(
     form.status = FormStatus.SUBMITTED
     form.submitted_at = datetime.utcnow()
     db.commit()
+
+    # Notify mentor
+    if form.mentor_id:
+        push_notification(
+            db, form.mentor_id,
+            title="New Form Submitted 📋",
+            body=f"{current_user.name} ({current_user.register_number}) has submitted their SSM form for {form.academic_year}.",
+            icon="info",
+        )
+        db.commit()
+
     return {"message": "Form submitted for mentor review", "status": form.status}
 
 
