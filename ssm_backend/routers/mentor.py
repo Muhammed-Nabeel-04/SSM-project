@@ -93,6 +93,62 @@ def all_assigned_students(
         ],
     }
 
+# ─── ALL ACTIVITIES (for Activities tab) ─────────────────────────────────────
+
+@router.get("/activities")
+def get_mentor_activities(
+    status: str | None = Query(None, description="Filter: pending | accepted | rejected"),
+    limit:  int = Query(100, ge=1, le=500),
+    offset: int = Query(0,   ge=0),
+    current_user: User = Depends(require_mentor),
+    db: Session = Depends(get_db),
+):
+    from models.activity import StudentActivity, MentorStatus
+
+    # All form IDs assigned to this mentor
+    form_ids = [
+        f.id for f in db.query(SSMForm)
+        .filter(SSMForm.mentor_id == current_user.id)
+        .all()
+    ]
+
+    query = db.query(StudentActivity).filter(
+        StudentActivity.form_id.in_(form_ids)
+    )
+
+    # Optional status filter
+    if status:
+        status_map = {
+            "pending":  MentorStatus.PENDING,
+            "accepted": MentorStatus.ACCEPTED,
+            "rejected": MentorStatus.REJECTED,
+        }
+        if status not in status_map:
+            raise HTTPException(status_code=400, detail="Invalid status filter")
+        query = query.filter(StudentActivity.mentor_status == status_map[status])
+
+    total      = query.count()
+    activities = query.order_by(StudentActivity.submitted_at.desc()) \
+                      .offset(offset).limit(limit).all()
+
+    return {
+        "total":  total,
+        "offset": offset,
+        "limit":  limit,
+        "items": [
+            {
+                "activity_id":       a.id,
+                "activity_name":     a.activity_type.value,
+                "student_name":      a.student.name,
+                "register_number":   a.student.register_number,
+                "status":            a.mentor_status.value,   # "pending" | "accepted" | "rejected"
+                "submitted_date":    a.submitted_at.strftime("%d %b %Y") if a.submitted_at else None,
+                "rejection_reason":  a.mentor_note if a.mentor_status.value == "rejected" else None,
+            }
+            for a in activities
+        ],
+    }
+
 
 # ─── VIEW FORM DETAILS ────────────────────────────────────────────────────────
 

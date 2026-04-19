@@ -387,6 +387,25 @@ class ApiService {
     return _handle(res);
   }
 
+  static Future<Map<String, dynamic>> getMentorActivities({
+    String? status,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final params = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (status != null) params['status'] = status;
+    final res = await http
+        .get(
+          _url('/mentor/activities', params),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    return _handle(res);
+  }
+
   // ─── HOD ──────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getHodDashboard() async {

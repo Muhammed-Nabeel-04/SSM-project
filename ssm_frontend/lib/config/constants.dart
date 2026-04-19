@@ -22,6 +22,7 @@ class AppColors {
   static const mentorReview = Color(0xFFF57C00);
   static const hodReview = Color(0xFF7B1FA2);
   static const approved = Color(0xFF388E3C);
+  static const accepted = Color(0xFF4CAF50); // Green for accepted activities
   static const rejected = Color(0xFFD32F2F);
 
   static const starGold = Color(0xFFFFC107);
