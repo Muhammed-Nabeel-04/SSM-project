@@ -1,4 +1,3 @@
-// ═══ mentor_dashboard.dart ══════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -27,14 +26,12 @@ class _MentorDashboardState extends State<MentorDashboard>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
     _load();
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = (_data == null); // Show loader only on first load
-    });
+    setState(() => _loading = (_data == null));
     try {
       final res = await Future.wait([
         ApiService.getMentorDashboard(),
@@ -51,9 +48,15 @@ class _MentorDashboardState extends State<MentorDashboard>
     }
   }
 
+  List<dynamic> _filtered(String status) => (_allStudents ?? [])
+      .where((s) => s['status'].toString() == status)
+      .toList();
+
   @override
   Widget build(BuildContext context) {
     final pending = (_data?['pending_reviews'] as List?) ?? [];
+    final approvedCount = _filtered('approved').length;
+    final rejectedCount = _filtered('rejected').length;
 
     return Scaffold(
       appBar: AppBar(
@@ -102,9 +105,11 @@ class _MentorDashboardState extends State<MentorDashboard>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white54,
+          isScrollable: true,
           tabs: [
             Tab(text: 'Pending (${pending.length})'),
-            Tab(text: 'All Students (${_allStudents?.length ?? 0})'),
+            Tab(text: 'Approved ($approvedCount)'),
+            Tab(text: 'Rejected ($rejectedCount)'),
             const Tab(text: 'Activities'),
           ],
         ),
@@ -117,9 +122,7 @@ class _MentorDashboardState extends State<MentorDashboard>
                 child: TabBarView(
                   controller: _tab,
                   children: [
-                    // Activities tab
-                    const MentorActivityScreen(),
-                    // Pending
+                    // Pending Tab
                     pending.isEmpty
                         ? const SingleChildScrollView(
                             physics: AlwaysScrollableScrollPhysics(),
@@ -140,21 +143,37 @@ class _MentorDashboardState extends State<MentorDashboard>
                                 _PendingCard(form: pending[i]),
                           ),
 
-                    // All Students Tab
-                    // All students
-                    ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _allStudents?.length ?? 0,
-                      itemBuilder: (_, i) =>
-                          _StudentCard(student: _allStudents![i]),
+                    // Approved Tab
+                    _buildStudentList(
+                      _filtered('approved'),
+                      emptyMsg: 'No approved students yet.',
                     ),
 
-                    // Activity reviews
+                    // Rejected Tab
+                    _buildStudentList(
+                      _filtered('rejected'),
+                      emptyMsg: 'No rejected students.',
+                    ),
+
+                    // Activities Tab
                     const MentorActivityScreen(),
                   ],
                 ),
               ),
       ),
+    );
+  }
+
+  Widget _buildStudentList(List<dynamic> students, {required String emptyMsg}) {
+    if (students.isEmpty) {
+      return Center(
+          child: Text(emptyMsg,
+              style: const TextStyle(color: AppColors.textSecondary)));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: students.length,
+      itemBuilder: (_, i) => _StudentCard(student: students[i]),
     );
   }
 }
@@ -229,18 +248,41 @@ class _StudentCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Text(student['register_number'] ?? '',
             style: const TextStyle(fontSize: 12)),
-        trailing: student['grand_total'] != null
-            ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(
-                  '${(student['grand_total'] as num).toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: AppColors.primary),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (student['grand_total'] != null) ...[
+              Text(
+                '${(student['grand_total'] as num).toStringAsFixed(0)} pts',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: AppColors.primary),
+              ),
+              StarRating(stars: student['star_rating'] ?? 0, size: 13),
+            ] else
+              StatusBadge(student['status'] ?? 'draft'),
+            const SizedBox(height: 2),
+            if ((student['pending_activities'] ?? 0) > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.mentorReview.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: AppColors.mentorReview.withOpacity(0.3)),
                 ),
-                StarRating(stars: student['star_rating'] ?? 0, size: 14),
-              ])
-            : StatusBadge(student['status'] ?? 'draft'),
+                child: Text(
+                  '${student['pending_activities']}/${student['total_activities']} pending',
+                  style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.mentorReview,
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+          ],
+        ),
         onTap: () {
           if (student['form_id'] != null) {
             context.push('/mentor/review/${student['form_id']}');

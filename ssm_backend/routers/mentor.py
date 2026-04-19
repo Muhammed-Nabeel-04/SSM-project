@@ -35,7 +35,6 @@ def mentor_dashboard(
     form_ids = [
         f.id for f in db.query(SSMForm).filter(
             SSMForm.mentor_id == current_user.id,
-            SSMForm.status.in_([FormStatus.SUBMITTED, FormStatus.MENTOR_REVIEW])
         ).all()
     ]
 
@@ -84,6 +83,11 @@ def all_assigned_students(
                 "status":          f.status,
                 "grand_total":     f.calculated_score.grand_total if f.calculated_score else None,
                 "star_rating":     f.calculated_score.star_rating if f.calculated_score else None,
+                "pending_activities": sum(
+                    1 for a in f.activities
+                    if a.mentor_status.value == "pending" and a.ocr_status.value != "failed"
+                ),
+                "total_activities": len(f.activities),
             }
             for f in forms
         ],

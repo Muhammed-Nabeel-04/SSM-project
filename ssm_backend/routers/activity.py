@@ -565,7 +565,7 @@ def mentor_pending_activities(
     form_ids = [
         f.id for f in db.query(SSMForm).filter(
             SSMForm.mentor_id == current_user.id,
-            SSMForm.status == FormStatus.SUBMITTED
+            SSMForm.status.in_([FormStatus.SUBMITTED, FormStatus.MENTOR_REVIEW, FormStatus.DRAFT])
         ).all()
     ]
     if not form_ids:
