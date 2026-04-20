@@ -47,28 +47,52 @@ class _MentorDashboardState extends State<MentorDashboard>
         _allStudents = (studentsData['items'] as List?) ?? [];
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      print('❌ Dashboard/Students Error: $e');
       setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load dashboard: $e')),
+        );
+      }
     }
 
     // ── Activities: fetched separately so failure won't break above ────────
     try {
+      print('🔄 Fetching activities...');
       final activitiesData = await ApiService.getMentorActivities();
+      print('✅ Activities response: $activitiesData');
       setState(() {
         _activities = (activitiesData['items'] as List?) ?? [];
       });
-    } catch (_) {
+      print('✅ Activities loaded: ${_activities?.length ?? 0}');
+    } catch (e) {
+      print('❌ Activities Error: $e');
       setState(() => _activities = []);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load activities: $e')),
+        );
+      }
     }
 
     // ── HOD Pending: fetched separately ────────────────────────────────────
     try {
+      print('🔄 Fetching HOD pending...');
       final hodData = await ApiService.getMentorHodPending();
+      print('✅ HOD pending response: $hodData');
       setState(() {
         _hodPending = (hodData['items'] as List?) ?? [];
       });
-    } catch (_) {
+      print('✅ HOD pending loaded: ${_hodPending?.length ?? 0}');
+    } catch (e) {
+      print('❌ HOD Pending Error: $e');
       setState(() => _hodPending = []);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load HOD pending: $e')),
+        );
+      }
     }
   }
 

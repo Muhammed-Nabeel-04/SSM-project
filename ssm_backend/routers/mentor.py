@@ -50,8 +50,8 @@ def mentor_dashboard(
             "student_name":   a.student.name,
             "register_number":a.student.register_number,
             "academic_year":  a.form.academic_year,
-            "status":         a.form.status,
-            "submitted_at":   a.submitted_at,
+            "status":         a.form.status.value,
+            "submitted_at":   a.submitted_at.isoformat() if a.submitted_at else None,
             "preview_score":  a.form.calculated_score.grand_total if a.form.calculated_score else None,
         }
         for a in pending_activities
@@ -80,12 +80,13 @@ def all_assigned_students(
                 "student_name":     f.student.name,
                 "register_number":  f.student.register_number,
                 "academic_year":    f.academic_year,
-                "status":           f.status,
+                "status":           f.status.value,
                 "grand_total":      f.calculated_score.grand_total if f.calculated_score else None,
                 "star_rating":      f.calculated_score.star_rating if f.calculated_score else None,
                 "pending_activities": sum(
                     1 for a in f.activities
-                    if a.mentor_status.value == "pending" and a.ocr_status.value != "failed"
+                    if getattr(a.mentor_status, 'value', None) == "pending"
+                    and getattr(a.ocr_status, 'value', '') != "failed"
                 ),
                 "total_activities": len(f.activities),
             }
@@ -260,7 +261,7 @@ def get_form_details(
             "section":         student.section,
         },
         "academic_year": form.academic_year,
-        "status":        form.status,
+        "status":        form.status.value,
         "activities": [
             {
                 "id": a.id,
