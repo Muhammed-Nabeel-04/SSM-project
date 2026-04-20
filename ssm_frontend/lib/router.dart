@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'services/token_service.dart';
 
-import 'config/constants.dart'; // Added to ensure AppColors and AppConfig are accessible
+import 'config/constants.dart';
 import 'services/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 
@@ -19,6 +19,7 @@ import 'screens/student/form_timeline_screen.dart';
 import 'screens/mentor/mentor_dashboard.dart';
 import 'screens/mentor/mentor_review_screen.dart';
 import 'screens/mentor/mentor_activity_screen.dart';
+import 'screens/mentor/mentor_activity_detail_screen.dart'; // Ensure this import exists
 
 // HOD
 import 'screens/hod/hod_dashboard.dart';
@@ -35,7 +36,7 @@ import 'screens/admin/admin_settings_screen.dart';
 // Shared
 import 'screens/shared/profile_screen.dart';
 import 'screens/auth/first_setup_screen.dart';
-import 'screens/admin/backend_settings_screen.dart'; // file created below
+import 'screens/admin/backend_settings_screen.dart';
 import 'core/app_config.dart';
 
 class _AuthNotifierWrapper extends ChangeNotifier {
@@ -65,12 +66,9 @@ GoRouter buildRouter(AuthProvider authProvider) {
         return isSplash ? null : '/splash';
       }
 
-      // Coming from splash — redirect to correct destination
       if (isSplash) {
         if (auth.state == AuthState.unauthenticated) return '/login';
-        // Force password change / first-time setup before anything else
         if (auth.mustChangePassword) {
-          // Admin: show department setup first; others: show profile/password
           return auth.role == 'admin' ? '/setup' : '/profile';
         }
         return switch (auth.role) {
@@ -98,7 +96,6 @@ GoRouter buildRouter(AuthProvider authProvider) {
         };
       }
 
-      // Role-based path protection
       final path = state.matchedLocation;
       if (path == '/profile') return null;
       if (path == '/setup') return null;
@@ -147,19 +144,15 @@ GoRouter buildRouter(AuthProvider authProvider) {
       ),
       GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
       GoRoute(path: '/setup', builder: (c, s) => const FirstSetupScreen()),
-
-      // ── PROFILE (all roles) ────────────────────────────────────────────
       GoRoute(path: '/profile', builder: (c, s) => const ProfileScreen()),
 
       // ── STUDENT ───────────────────────────────────────────────────────
       GoRoute(
-        path: '/student/dashboard',
-        builder: (c, s) => const ActivityDashboard(),
-      ),
+          path: '/student/dashboard',
+          builder: (c, s) => const ActivityDashboard()),
       GoRoute(
-        path: '/student/add-activity',
-        builder: (c, s) => const AddActivityScreen(),
-      ),
+          path: '/student/add-activity',
+          builder: (c, s) => const AddActivityScreen()),
       GoRoute(
         path: '/student/form/:formId/score',
         builder: (c, s) =>
@@ -173,17 +166,21 @@ GoRouter buildRouter(AuthProvider authProvider) {
 
       // ── MENTOR ────────────────────────────────────────────────────────
       GoRoute(
-        path: '/mentor/dashboard',
-        builder: (c, s) => const MentorDashboard(),
-      ),
+          path: '/mentor/dashboard',
+          builder: (c, s) => const MentorDashboard()),
       GoRoute(
-        path: '/mentor/activities',
-        builder: (c, s) => const MentorActivityScreen(),
-      ),
+          path: '/mentor/activities',
+          builder: (c, s) => const MentorActivityScreen()),
       GoRoute(
         path: '/mentor/activity/:activityId/file',
         builder: (c, s) => _ActivityFileViewer(
           activityId: int.parse(s.pathParameters['activityId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/mentor/activity/:id', // THE NEW ROUTE
+        builder: (context, state) => MentorActivityDetailScreen(
+          activityId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(
@@ -200,37 +197,26 @@ GoRouter buildRouter(AuthProvider authProvider) {
             HodApprovalScreen(formId: int.parse(s.pathParameters['formId']!)),
       ),
       GoRoute(
-        path: '/hod/reports',
-        builder: (c, s) => const DeptReportScreen(),
-      ),
+          path: '/hod/reports', builder: (c, s) => const DeptReportScreen()),
 
       // ── ADMIN ─────────────────────────────────────────────────────────
       GoRoute(
-        path: '/admin/dashboard',
-        builder: (c, s) => const AdminDashboard(),
-      ),
+          path: '/admin/dashboard', builder: (c, s) => const AdminDashboard()),
       GoRoute(
-        path: '/admin/users',
-        builder: (c, s) => const AdminUsersScreen(),
-      ),
+          path: '/admin/users', builder: (c, s) => const AdminUsersScreen()),
       GoRoute(
         path: '/admin/create-user',
-        builder: (c, s) => AdminCreateUserScreen(
-          initialRole: s.extra as String?,
-        ),
+        builder: (c, s) =>
+            AdminCreateUserScreen(initialRole: s.extra as String?),
       ),
       GoRoute(
-        path: '/admin/import',
-        builder: (c, s) => const AdminImportScreen(),
-      ),
+          path: '/admin/import', builder: (c, s) => const AdminImportScreen()),
       GoRoute(
-        path: '/admin/settings',
-        builder: (c, s) => const AdminSettingsScreen(),
-      ),
+          path: '/admin/settings',
+          builder: (c, s) => const AdminSettingsScreen()),
       GoRoute(
-        path: '/backend-settings',
-        builder: (context, state) => const BackendSettingsScreen(),
-      ),
+          path: '/backend-settings',
+          builder: (c, s) => const BackendSettingsScreen()),
     ],
   );
 }
@@ -267,7 +253,6 @@ class _ActivityFileViewerState extends State<_ActivityFileViewer> {
       final streamedResponse = await client.send(request);
       client.close();
 
-      // Capture redirect location (302 → Supabase public URL)
       final location = streamedResponse.headers['location'];
       if (location != null) {
         setState(() {
@@ -275,7 +260,6 @@ class _ActivityFileViewerState extends State<_ActivityFileViewer> {
           _loading = false;
         });
       } else {
-        // No redirect — use response URL directly
         setState(() {
           _publicUrl =
               '${AppConfig.baseUrl}/activity/${widget.activityId}/file';
@@ -308,7 +292,6 @@ class _ActivityFileViewerState extends State<_ActivityFileViewer> {
                   ? null
                   : () async {
                       final uri = Uri.parse(_publicUrl!);
-                      // ignore: deprecated_member_use
                       await launchUrl(uri,
                           mode: LaunchMode.externalApplication);
                     },

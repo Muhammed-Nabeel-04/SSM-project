@@ -19,7 +19,8 @@ class _MentorDashboardState extends State<MentorDashboard>
     with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _data;
   List<dynamic>? _allStudents;
-  List<dynamic>? _activities; // ✅ ADDED: was missing
+  List<dynamic>? _activities;
+  List<dynamic>? _hodPending;
   bool _loading = true;
   late TabController _tab;
   String _searchQuery = '';
@@ -28,28 +29,46 @@ class _MentorDashboardState extends State<MentorDashboard>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
     _load();
   }
 
   Future<void> _load() async {
     setState(() => _loading = (_data == null));
     try {
+      // ── Core data: dashboard + students (must succeed) ──────────────────
       final res = await Future.wait([
         ApiService.getMentorDashboard(),
         ApiService.getMentorAllStudents(),
-        ApiService.getMentorActivities(), // ✅ ADDED: fetch activities
       ]);
       setState(() {
         _data = res[0] as Map<String, dynamic>;
         final studentsData = res[1] as Map<String, dynamic>;
         _allStudents = (studentsData['items'] as List?) ?? [];
-        final activitiesData = res[2] as Map<String, dynamic>;
-        _activities = (activitiesData['items'] as List?) ?? []; // ✅ ADDED
         _loading = false;
       });
     } catch (_) {
       setState(() => _loading = false);
+    }
+
+    // ── Activities: fetched separately so failure won't break above ────────
+    try {
+      final activitiesData = await ApiService.getMentorActivities();
+      setState(() {
+        _activities = (activitiesData['items'] as List?) ?? [];
+      });
+    } catch (_) {
+      setState(() => _activities = []);
+    }
+
+    // ── HOD Pending: fetched separately ────────────────────────────────────
+    try {
+      final hodData = await ApiService.getMentorHodPending();
+      setState(() {
+        _hodPending = (hodData['items'] as List?) ?? [];
+      });
+    } catch (_) {
+      setState(() => _hodPending = []);
     }
   }
 
@@ -126,10 +145,12 @@ class _MentorDashboardState extends State<MentorDashboard>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white54,
+          isScrollable: true,
           tabs: [
             Tab(text: 'Pending (${pending.length})'),
             Tab(text: 'Students (${_allStudents?.length ?? 0})'),
             Tab(text: 'Activities (${_activities?.length ?? 0})'),
+            Tab(text: 'With HOD (${_hodPending?.length ?? 0})'),
           ],
         ),
       ),
@@ -220,10 +241,35 @@ class _MentorDashboardState extends State<MentorDashboard>
                     ]),
 
                     // ── Activities Tab ───────────────────────────────
-                    _ActivitiesTab(
-                      activities: _activities ?? [], // ✅ now defined
-                      onRefresh: _load,
-                    ),
+                    _activities == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : _ActivitiesTab(
+                            activities: _activities!,
+                            onRefresh: _load,
+                          ),
+
+                    // ── HOD Pending Tab ──────────────────────────────
+                    _hodPending == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : _hodPending!.isEmpty
+                            ? const SingleChildScrollView(
+                                physics: AlwaysScrollableScrollPhysics(),
+                                child: SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text('No forms with HOD',
+                                        style: TextStyle(
+                                            color: AppColors.textSecondary)),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _hodPending!.length,
+                                itemBuilder: (_, i) =>
+                                    _HodPendingCard(form: _hodPending![i]),
+                              ),
                   ],
                 ),
               ),
@@ -238,10 +284,7 @@ class _ActivitiesTab extends StatefulWidget {
   final List<dynamic> activities;
   final Future<void> Function() onRefresh;
 
-  const _ActivitiesTab({
-    required this.activities,
-    required this.onRefresh,
-  });
+  const _ActivitiesTab({required this.activities, required this.onRefresh});
 
   @override
   State<_ActivitiesTab> createState() => _ActivitiesTabState();
@@ -250,68 +293,66 @@ class _ActivitiesTab extends StatefulWidget {
 class _ActivitiesTabState extends State<_ActivitiesTab> {
   String _filter = 'all';
 
-  List<dynamic> _filteredActivities() {
+  List<dynamic> _filtered() {
     if (_filter == 'all') return widget.activities;
     return widget.activities
         .where((a) => (a['status'] ?? '').toLowerCase() == _filter)
         .toList();
   }
 
+  int _count(String status) => status == 'all'
+      ? widget.activities.length
+      : widget.activities
+          .where((a) => (a['status'] ?? '').toLowerCase() == status)
+          .length;
+
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredActivities();
-
+    final filtered = _filtered();
     return Column(
       children: [
-        // Filter Chips
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SingleChildScrollView(
+        // ── Filter chips ────────────────────────────────────────────────────
+        SizedBox(
+          height: 56,
+          child: ListView(
             scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  count: widget.activities.length,
-                  isSelected: _filter == 'all',
-                  onTap: () => setState(() => _filter = 'all'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Pending',
-                  count: widget.activities
-                      .where((a) => a['status'] == 'pending')
-                      .length,
-                  isSelected: _filter == 'pending',
-                  onTap: () => setState(() => _filter = 'pending'),
-                  color: AppColors.mentorReview,
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Accepted',
-                  count: widget.activities
-                      .where((a) => a['status'] == 'accepted')
-                      .length,
-                  isSelected: _filter == 'accepted',
-                  onTap: () => setState(() => _filter = 'accepted'),
-                  color: AppColors.accepted,
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Rejected',
-                  count: widget.activities
-                      .where((a) => a['status'] == 'rejected')
-                      .length,
-                  isSelected: _filter == 'rejected',
-                  onTap: () => setState(() => _filter = 'rejected'),
-                  color: AppColors.rejected,
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            children: [
+              _Chip(
+                label: 'All',
+                count: _count('all'),
+                selected: _filter == 'all',
+                onTap: () => setState(() => _filter = 'all'),
+              ),
+              const SizedBox(width: 8),
+              _Chip(
+                label: 'Pending',
+                count: _count('pending'),
+                selected: _filter == 'pending',
+                color: AppColors.mentorReview,
+                onTap: () => setState(() => _filter = 'pending'),
+              ),
+              const SizedBox(width: 8),
+              _Chip(
+                label: 'Accepted',
+                count: _count('accepted'),
+                selected: _filter == 'accepted',
+                color: AppColors.accepted,
+                onTap: () => setState(() => _filter = 'accepted'),
+              ),
+              const SizedBox(width: 8),
+              _Chip(
+                label: 'Rejected',
+                count: _count('rejected'),
+                selected: _filter == 'rejected',
+                color: AppColors.rejected,
+                onTap: () => setState(() => _filter = 'rejected'),
+              ),
+            ],
           ),
         ),
 
-        // Activities List
+        // ── List ────────────────────────────────────────────────────────────
         Expanded(
           child: filtered.isEmpty
               ? const Center(
@@ -331,68 +372,57 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
   }
 }
 
-// ─── FILTER CHIP ──────────────────────────────────────────────────────────────
+// ─── CHIP ─────────────────────────────────────────────────────────────────────
 
-class _FilterChip extends StatelessWidget {
+class _Chip extends StatelessWidget {
   final String label;
   final int count;
-  final bool isSelected;
+  final bool selected;
   final VoidCallback onTap;
   final Color? color;
 
-  const _FilterChip({
+  const _Chip({
     required this.label,
     required this.count,
-    required this.isSelected,
+    required this.selected,
     required this.onTap,
     this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final chipColor = color ?? AppColors.primary;
-
-    return InkWell(
+    final c = color ?? AppColors.primary;
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? chipColor : chipColor.withOpacity(0.1),
+          color: selected ? c : c.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? chipColor : chipColor.withOpacity(0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: selected ? c : c.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : chipColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
+            Text(label,
+                style: TextStyle(
+                    color: selected ? Colors.white : c,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13)),
             const SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.2)
-                    : chipColor.withOpacity(0.15),
+                color: selected
+                    ? Colors.white.withOpacity(0.25)
+                    : c.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                count.toString(),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : chipColor,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
-              ),
+              child: Text('$count',
+                  style: TextStyle(
+                      color: selected ? Colors.white : c,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11)),
             ),
           ],
         ),
@@ -407,10 +437,7 @@ class _ActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
   final Future<void> Function() onRefresh;
 
-  const _ActivityCard({
-    required this.activity,
-    required this.onRefresh,
-  });
+  const _ActivityCard({required this.activity, required this.onRefresh});
 
   Future<void> _handleAction(
       BuildContext context, String action, int activityId) async {
@@ -424,86 +451,73 @@ class _ActivityCard extends StatelessWidget {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Approve Activity'),
-          content:
-              const Text('Are you sure you want to approve this activity?'),
+          content: const Text('Approve this activity?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel')),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Approve',
-                  style: TextStyle(color: AppColors.accepted)),
-            ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Approve',
+                    style: TextStyle(color: AppColors.accepted))),
           ],
         ),
       );
-
       if (confirm == true) {
         try {
           await ApiService.approveActivity(activityId, note: null);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Activity approved successfully')),
-            );
+                const SnackBar(content: Text('Activity approved')));
             await onRefresh();
           }
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to approve: $e')),
-            );
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('Failed: $e')));
           }
         }
       }
     }
 
     if (action == 'reject') {
+      final controller = TextEditingController();
       final reason = await showDialog<String>(
         context: context,
-        builder: (_) {
-          final controller = TextEditingController();
-          return AlertDialog(
-            title: const Text('Reject Activity'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Reason for rejection',
-                hintText: 'Enter reason...',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
+        builder: (_) => AlertDialog(
+          title: const Text('Reject Activity'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Reason for rejection',
+              hintText: 'Enter reason...',
+              border: OutlineInputBorder(),
             ),
-            actions: [
-              TextButton(
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
+                child: const Text('Cancel')),
+            TextButton(
                 onPressed: () => Navigator.pop(context, controller.text),
                 child: const Text('Reject',
-                    style: TextStyle(color: AppColors.rejected)),
-              ),
-            ],
-          );
-        },
+                    style: TextStyle(color: AppColors.rejected))),
+          ],
+        ),
       );
-
       if (reason != null && reason.isNotEmpty) {
         try {
           await ApiService.rejectActivity(activityId, reason);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Activity rejected')),
-            );
+                const SnackBar(content: Text('Activity rejected')));
             await onRefresh();
           }
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to reject: $e')),
-            );
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('Failed: $e')));
           }
         }
       }
@@ -522,68 +536,52 @@ class _ActivityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activity['activity_name'] ?? 'Unnamed Activity',
+            // ── Header ──────────────────────────────────────────────────────
+            Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(activity['activity_name'] ?? 'Unnamed Activity',
                         style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        activity['student_name'] ?? '',
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    const SizedBox(height: 4),
+                    Text(activity['student_name'] ?? '',
                         style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        activity['register_number'] ?? '',
+                            color: AppColors.textSecondary, fontSize: 13)),
+                    Text(activity['register_number'] ?? '',
                         style: const TextStyle(
-                          color: AppColors.textLight,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+                            color: AppColors.textLight, fontSize: 12)),
+                  ],
                 ),
-                StatusBadge(status),
-              ],
-            ),
+              ),
+              StatusBadge(status),
+            ]),
+
+            // ── Date ────────────────────────────────────────────────────────
             if (activity['submitted_date'] != null) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_rounded,
-                      size: 14, color: AppColors.textLight),
-                  const SizedBox(width: 4),
-                  Text(
-                    activity['submitted_date'],
+              Row(children: [
+                const Icon(Icons.calendar_today_rounded,
+                    size: 14, color: AppColors.textLight),
+                const SizedBox(width: 4),
+                Text(activity['submitted_date'],
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textLight,
-                    ),
-                  ),
-                ],
-              ),
+                        fontSize: 12, color: AppColors.textLight)),
+              ]),
             ],
+
+            // ── Rejection reason ─────────────────────────────────────────────
             if (status == 'rejected' &&
                 activity['rejection_reason'] != null) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.rejected.withOpacity(0.1),
+                  color: AppColors.rejected.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.rejected.withOpacity(0.3),
-                  ),
+                  border:
+                      Border.all(color: AppColors.rejected.withOpacity(0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,91 +590,71 @@ class _ActivityCard extends StatelessWidget {
                         size: 16, color: AppColors.rejected),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        activity['rejection_reason'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.rejected,
-                        ),
-                      ),
+                      child: Text(activity['rejection_reason'],
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.rejected)),
                     ),
                   ],
                 ),
               ),
             ],
+
+            // ── Action buttons ───────────────────────────────────────────────
             const SizedBox(height: 12),
-            _buildActionButtons(context, status, activityId),
+            if (status == 'pending')
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        _handleAction(context, 'reject', activityId),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text('Reject'),
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.rejected,
+                        side: const BorderSide(color: AppColors.rejected)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _handleAction(context, 'approve', activityId),
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Approve'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accepted,
+                        foregroundColor: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _handleAction(context, 'view', activityId),
+                  icon: const Icon(Icons.visibility_rounded),
+                  tooltip: 'View',
+                ),
+              ])
+            else
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _handleAction(context, 'view', activityId),
+                  icon: const Icon(Icons.visibility_rounded, size: 18),
+                  label: const Text('View Details'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: status == 'accepted'
+                        ? AppColors.accepted
+                        : AppColors.rejected,
+                    side: BorderSide(
+                        color: status == 'accepted'
+                            ? AppColors.accepted
+                            : AppColors.rejected),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildActionButtons(
-      BuildContext context, String status, int activityId) {
-    if (status == 'pending') {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _handleAction(context, 'reject', activityId),
-              icon: const Icon(Icons.close_rounded, size: 18),
-              label: const Text('Reject'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.rejected,
-                side: const BorderSide(color: AppColors.rejected),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _handleAction(context, 'approve', activityId),
-              icon: const Icon(Icons.check_rounded, size: 18),
-              label: const Text('Approve'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accepted,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () => _handleAction(context, 'view', activityId),
-            icon: const Icon(Icons.visibility_rounded),
-            tooltip: 'View Details',
-          ),
-        ],
-      );
-    } else if (status == 'accepted') {
-      return SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: () => _handleAction(context, 'view', activityId),
-          icon: const Icon(Icons.visibility_rounded, size: 18),
-          label: const Text('View Details'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.accepted,
-            side: const BorderSide(color: AppColors.accepted),
-          ),
-        ),
-      );
-    } else if (status == 'rejected') {
-      return SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: () => _handleAction(context, 'view', activityId),
-          icon: const Icon(Icons.visibility_rounded, size: 18),
-          label: const Text('View Details'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.rejected,
-            side: const BorderSide(color: AppColors.rejected),
-          ),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
   }
 }
 
@@ -794,6 +772,111 @@ class _StudentCard extends StatelessWidget {
             context.push('/mentor/review/${student['form_id']}');
           }
         },
+      ),
+    );
+  }
+}
+
+// ─── HOD PENDING CARD ─────────────────────────────────────────────────────────
+
+class _HodPendingCard extends StatelessWidget {
+  final Map<String, dynamic> form;
+  const _HodPendingCard({required this.form});
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/mentor/review/${form['form_id']}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const CircleAvatar(
+                  backgroundColor: AppColors.hodColor,
+                  child: Icon(Icons.person_rounded, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(form['student_name'] ?? '',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                        Text(form['register_number'] ?? '',
+                            style: const TextStyle(
+                                color: AppColors.textSecondary, fontSize: 12)),
+                        Text('AY ${form['academic_year']}',
+                            style: const TextStyle(
+                                color: AppColors.textLight, fontSize: 11)),
+                      ]),
+                ),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  if (form['grand_total'] != null) ...[
+                    Text(
+                      '${(form['grand_total'] as num).toStringAsFixed(0)} pts',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: AppColors.primary),
+                    ),
+                    if (form['star_rating'] != null)
+                      StarRating(stars: form['star_rating'], size: 13),
+                  ],
+                ]),
+              ]),
+              if (form['submitted_at'] != null) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  const Icon(Icons.send_rounded,
+                      size: 14, color: AppColors.hodColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Sent to HOD on ${form['submitted_at']}',
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.hodColor,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ]),
+              ],
+              if (form['mentor_remarks'] != null &&
+                  form['mentor_remarks'].toString().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.comment_rounded,
+                          size: 14, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          form['mentor_remarks'],
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

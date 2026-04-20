@@ -406,6 +406,18 @@ class ApiService {
     return _handle(res);
   }
 
+  static Future<Map<String, dynamic>> getMentorActivityDetail(
+    int activityId,
+  ) async {
+    final res = await http
+        .get(
+          _url('/mentor/activity/$activityId'),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    return _handle(res);
+  }
+
   // ─── HOD ──────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getHodDashboard() async {
@@ -584,6 +596,22 @@ class ApiService {
         .timeout(_timeout, onTimeout: () => throw _timeoutError());
     final list = _handle(res) as List;
     return list.cast<Map<String, dynamic>>();
+  }
+
+  static Future<Map<String, dynamic>> getMentorHodPending({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final res = await http
+        .get(
+          _url('/mentor/hod-pending', {
+            'limit': limit.toString(),
+            'offset': offset.toString(),
+          }),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    return _handle(res);
   }
 
   static Future<Map<String, dynamic>> getSystemSettings() async {
