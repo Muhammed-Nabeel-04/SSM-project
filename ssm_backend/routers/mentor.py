@@ -112,14 +112,16 @@ def get_mentor_activities(
         .all()
     ]
 
+    from models.activity import OCRStatus
     query = db.query(StudentActivity).filter(
-        StudentActivity.form_id.in_(form_ids)
+        StudentActivity.form_id.in_(form_ids),
+        StudentActivity.ocr_status != OCRStatus.FAILED,
     )
 
     if status:
         status_map = {
             "pending":  MentorStatus.PENDING,
-            "accepted": MentorStatus.ACCEPTED,
+            "approved": MentorStatus.APPROVED,
             "rejected": MentorStatus.REJECTED,
         }
         if status not in status_map:

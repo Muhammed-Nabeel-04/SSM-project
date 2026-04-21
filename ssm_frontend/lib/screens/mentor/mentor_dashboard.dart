@@ -358,11 +358,11 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
               ),
               const SizedBox(width: 8),
               _Chip(
-                label: 'Accepted',
-                count: _count('accepted'),
-                selected: _filter == 'accepted',
+                label: 'Approved',
+                count: _count('approved'),
+                selected: _filter == 'approved',
                 color: AppColors.accepted,
-                onTap: () => setState(() => _filter = 'accepted'),
+                onTap: () => setState(() => _filter = 'approved'),
               ),
               const SizedBox(width: 8),
               _Chip(

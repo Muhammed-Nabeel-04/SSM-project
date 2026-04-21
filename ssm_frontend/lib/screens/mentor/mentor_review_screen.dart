@@ -588,29 +588,55 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Action Buttons
-            Row(children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _rejectForm,
-                  icon: const Icon(Icons.close_rounded,
-                      color: AppColors.rejected),
-                  label: const Text('Reject',
-                      style: TextStyle(color: AppColors.rejected)),
-                  style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.rejected)),
+            // Action Buttons — only show if form is still reviewable
+            if ((_data?['status'] as String?)?.toLowerCase() != 'hod_review' &&
+                (_data?['status'] as String?)?.toLowerCase() != 'approved')
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _rejectForm,
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.rejected),
+                    label: const Text('Reject',
+                        style: TextStyle(color: AppColors.rejected)),
+                    style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.rejected)),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: _submitReview,
-                  icon: const Icon(Icons.forward_rounded, size: 18),
-                  label: const Text('Submit & Forward to HOD'),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _submitReview,
+                    icon: const Icon(Icons.forward_rounded, size: 18),
+                    label: const Text('Submit & Forward to HOD'),
+                  ),
                 ),
+              ])
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.hodColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: AppColors.hodColor.withOpacity(0.3)),
+                ),
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.hourglass_top_rounded,
+                      size: 16, color: AppColors.hodColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    (_data?['status'] as String?)?.toLowerCase() == 'approved'
+                        ? 'Approved by HOD'
+                        : 'Forwarded to HOD — awaiting approval',
+                    style: const TextStyle(
+                        color: AppColors.hodColor, fontWeight: FontWeight.w600),
+                  ),
+                ]),
               ),
-            ]),
             const SizedBox(height: 32),
           ]),
         ),

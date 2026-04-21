@@ -434,6 +434,38 @@ class ApiService {
     return _handle(res);
   }
 
+  static Future<Map<String, dynamic>> getHodAllStudents({
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    final res = await http
+        .get(
+          _url('/hod/all-students', {
+            'limit': limit.toString(),
+            'offset': offset.toString(),
+          }),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    return _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getHodApproved({
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    final res = await http
+        .get(
+          _url('/hod/approved', {
+            'limit': limit.toString(),
+            'offset': offset.toString(),
+          }),
+          headers: await _authHeaders(),
+        )
+        .timeout(_timeout, onTimeout: () => throw _timeoutError());
+    return _handle(res);
+  }
+
   static Future<Map<String, dynamic>> hodApproveForm(
     int formId,
     Map<String, dynamic> payload,

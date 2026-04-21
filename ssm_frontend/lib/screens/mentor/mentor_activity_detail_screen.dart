@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../shared/document_viewer_screen.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
@@ -45,20 +45,18 @@ class _MentorActivityDetailScreenState
     }
   }
 
-  Future<void> _openFile() async {
+  void _openFile() {
     final url = _activity?['file_url'];
-    if (url != null) {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cannot open file')),
-          );
-        }
-      }
-    }
+    if (url == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DocumentViewerScreen(
+          url: url,
+          title: _activity!['filename'] ?? 'Document',
+        ),
+      ),
+    );
   }
 
   @override
