@@ -177,6 +177,102 @@ def approve_form(
         return {"message": "Form rejected by HOD. Student can re-submit."}
 
 
+# ─── ALL STUDENTS (submitted + not submitted) ─────────────────────────────────
+
+@router.get("/all-students")
+def hod_all_students(
+    limit: int = 200,
+    offset: int = 0,
+    current_user: User = Depends(require_hod),
+    db: Session = Depends(get_db),
+):
+    """All students in HOD's department with their latest form status."""
+    from models.user import User as UserModel
+
+    dept_students = (
+        db.query(UserModel)
+        .filter(
+            UserModel.department_id == current_user.department_id,
+            UserModel.role == "student",
+        )
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    items = []
+    for student in dept_students:
+        # Get the latest form for this student (if any)
+        latest_form = (
+            db.query(SSMForm)
+            .filter(SSMForm.student_id == student.id)
+            .order_by(SSMForm.id.desc())
+            .first()
+        )
+        sc = latest_form.calculated_score if latest_form else None
+        items.append({
+            "student_id": student.id,
+            "student_name": student.name,
+            "register_number": student.register_number,
+            "batch": getattr(student, "batch", None),
+            "semester": getattr(student, "semester", None),
+            "form_id": latest_form.id if latest_form else None,
+            "form_status": latest_form.status if latest_form else "not_submitted",
+            "academic_year": latest_form.academic_year if latest_form else None,
+            "grand_total": sc.grand_total if sc else None,
+            "star_rating": sc.star_rating if sc else None,
+        })
+
+    return {"items": items, "total": len(dept_students)}
+
+
+# ─── APPROVED FORMS ───────────────────────────────────────────────────────────
+
+@router.get("/approved")
+def hod_approved(
+    limit: int = 200,
+    offset: int = 0,
+    current_user: User = Depends(require_hod),
+    db: Session = Depends(get_db),
+):
+    """All approved forms in HOD's department."""
+    from models.user import User as UserModel
+
+    dept_students = db.query(UserModel).filter(
+        UserModel.department_id == current_user.department_id,
+        UserModel.role == "student",
+    ).all()
+    student_ids = [s.id for s in dept_students]
+
+    approved_forms = (
+        db.query(SSMForm)
+        .filter(
+            SSMForm.student_id.in_(student_ids),
+            SSMForm.status == FormStatus.APPROVED,
+        )
+        .order_by(SSMForm.approved_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    items = []
+    for f in approved_forms:
+        sc = f.calculated_score
+        items.append({
+            "form_id": f.id,
+            "student_name": f.student.name,
+            "register_number": f.student.register_number,
+            "academic_year": f.academic_year,
+            "final_score": sc.grand_total if sc else None,
+            "grand_total": sc.grand_total if sc else None,
+            "star_rating": sc.star_rating if sc else None,
+            "approved_at": f.approved_at.isoformat() if f.approved_at else None,
+        })
+
+    return {"items": items, "total": len(approved_forms)}
+
+
 # ─── DEPARTMENT REPORT ────────────────────────────────────────────────────────
 
 @router.get("/reports/department")
