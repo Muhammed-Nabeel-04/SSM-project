@@ -88,7 +88,11 @@ class _HodDashboardState extends State<HodDashboard>
       final matchesSearch = q.isEmpty || name.contains(q) || reg.contains(q);
 
       final status = (s['form_status'] ?? '').toString();
-      final hasSubmitted = status.isNotEmpty && status != 'not_submitted';
+      final hasSubmitted = status == 'hod_review' ||
+          status == 'approved' ||
+          status == 'mentor_review' ||
+          status == 'submitted' ||
+          status == 'draft';
       final matchesFilter = _filterStatus == 'all' ||
           (_filterStatus == 'submitted' && hasSubmitted) ||
           (_filterStatus == 'not_submitted' && !hasSubmitted);
@@ -601,9 +605,10 @@ class _StudentCard extends StatelessWidget {
       case 'hod_review':
         return AppColors.hodColor;
       case 'mentor_review':
-        return AppColors.mentorColor;
       case 'submitted':
-        return AppColors.submitted;
+        return AppColors.mentorColor; // both show as "With Mentor"
+      case 'rejected':
+        return Colors.red;
       case 'draft':
         return AppColors.draft;
       default:
@@ -616,11 +621,13 @@ class _StudentCard extends StatelessWidget {
       case 'approved':
         return 'Approved';
       case 'hod_review':
-        return 'With HOD';
+        return 'Pending HOD ⏳';
       case 'mentor_review':
-        return 'Mentor Review';
+        return 'With Mentor';
       case 'submitted':
-        return 'Submitted';
+        return 'With Mentor';
+      case 'rejected':
+        return 'Rejected';
       case 'draft':
         return 'Draft';
       default:

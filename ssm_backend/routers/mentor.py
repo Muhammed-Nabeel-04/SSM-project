@@ -348,7 +348,18 @@ def submit_review(
     form.leadership.team_management_leadership = payload.team_management_leadership
 
     form.mentor_remarks = payload.remarks
+    form.mentor_id      = current_user.id   # ← ensure always set
     form.status         = FormStatus.HOD_REVIEW
+
+    from models.user import User as UserModel, UserRole
+    _hod = db.query(UserModel).filter(
+        UserModel.department_id == form.student.department_id,
+        UserModel.role == UserRole.HOD,
+        UserModel.is_active == True,
+    ).first()
+    if _hod:
+        form.hod_id = _hod.id
+
     db.commit()
 
     score_row, _ = calculate_and_save(form, db)

@@ -43,7 +43,7 @@ def hod_dashboard(
     student_ids = [s.id for s in dept_students]
 
     pending = db.query(SSMForm).filter(
-        SSMForm.student_id.in_(student_ids),
+        SSMForm.hod_id == current_user.id,
         SSMForm.status == FormStatus.HOD_REVIEW
     ).all()
 
