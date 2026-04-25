@@ -2,7 +2,7 @@ import 'dart:async'; // Added import
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../services/token_service.dart';
-import 'dart:async'; // ✅ ADD THIS (line 1)
+
 import 'dart:io'; // ✅ ADD THIS (line 2)
 
 enum AuthState { unknown, authenticated, unauthenticated }
@@ -149,7 +149,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       final errorStr = e.toString();
       _errorMessage =
-          'Unexpected error: ${errorStr.length > 50 ? errorStr.substring(0, 50) + "..." : errorStr}';
+          'Unexpected error: ${errorStr.length > 50 ? "${errorStr.substring(0, 50)}..." : errorStr}';
       _loading = false;
       _state = AuthState.unauthenticated;
       notifyListeners();

@@ -26,7 +26,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
   void initState() {
     super.initState();
     _tab = TabController(length: _roles.length, vsync: this);
-    for (final r in _roles) _loadRole(r);
+    for (final r in _roles) {
+      _loadRole(r);
+    }
   }
 
   Future<void> _loadRole(String role) async {
@@ -51,8 +53,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
   Future<void> _toggle(String role, int userId, bool current) async {
     try {
       await ApiService.toggleUserActive(userId);
+      if (!mounted) return;
       _loadRole(role);
     } on ApiException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
@@ -71,7 +75,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
             tooltip: 'Bulk CSV Import',
             onPressed: () async {
               await context.push('/admin/import');
-              for (final r in _roles) _loadRole(r);
+              for (final r in _roles) {
+                _loadRole(r);
+              }
             },
           ),
           IconButton(
@@ -86,7 +92,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                 if (idx >= 0) _tab.animateTo(idx);
                 _loadRole(createdRole);
               } else {
-                for (final r in _roles) _loadRole(r);
+                for (final r in _roles) {
+                  _loadRole(r);
+                }
               }
             },
           ),
@@ -164,7 +172,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
               Row(children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                   child: Text(
                     (user['name'] ?? '?').substring(0, 1).toUpperCase(),
                     style: const TextStyle(
@@ -193,13 +201,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen>
                     color: (user['is_active'] == true
                             ? AppColors.success
                             : AppColors.textLight)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: (user['is_active'] == true
                               ? AppColors.success
                               : AppColors.textLight)
-                          .withOpacity(0.4),
+                          .withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
@@ -281,7 +289,7 @@ class _UserTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: CircleAvatar(
           backgroundColor: isActive
-              ? AppColors.primary.withOpacity(0.12)
+              ? AppColors.primary.withValues(alpha: 0.12)
               : AppColors.divider,
           child: Text(
             (user['name'] ?? '?').substring(0, 1).toUpperCase(),
@@ -309,9 +317,9 @@ class _UserTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Text(isActive ? 'Active' : 'Inactive',
                 style: TextStyle(

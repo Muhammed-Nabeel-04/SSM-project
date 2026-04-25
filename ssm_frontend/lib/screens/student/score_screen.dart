@@ -26,9 +26,14 @@ class _ScoreScreenState extends State<ScoreScreen> {
   Future<void> _load() async {
     try {
       final d = await ApiService.getScore(widget.formId);
-      setState(() { _data = d; _loading = false; });
+      setState(() {
+        _data = d;
+        _loading = false;
+      });
     } on ApiException catch (_) {
-      setState(() { _loading = false; });
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
@@ -60,21 +65,48 @@ class _ScoreScreenState extends State<ScoreScreen> {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.9,
                       children: [
-                        ScoreRingCard(score: (scores['academic'] as num).toDouble(), maxScore: 100, label: 'Academic', color: AppColors.academic, icon: Icons.school_rounded),
-                        ScoreRingCard(score: (scores['development'] as num).toDouble(), maxScore: 100, label: 'Development', color: AppColors.development, icon: Icons.workspace_premium_rounded),
-                        ScoreRingCard(score: (scores['skill'] as num).toDouble(), maxScore: 100, label: 'Skill & Professional', color: AppColors.skill, icon: Icons.trending_up_rounded),
-                        ScoreRingCard(score: (scores['discipline'] as num).toDouble(), maxScore: 100, label: 'Discipline', color: AppColors.discipline, icon: Icons.verified_rounded),
-                        ScoreRingCard(score: (scores['leadership'] as num).toDouble(), maxScore: 100, label: 'Leadership', color: AppColors.leadership, icon: Icons.emoji_events_rounded),
+                        ScoreRingCard(
+                            score: (scores['academic'] as num).toDouble(),
+                            maxScore: 100,
+                            label: 'Academic',
+                            color: AppColors.academic,
+                            icon: Icons.school_rounded),
+                        ScoreRingCard(
+                            score: (scores['development'] as num).toDouble(),
+                            maxScore: 100,
+                            label: 'Development',
+                            color: AppColors.development,
+                            icon: Icons.workspace_premium_rounded),
+                        ScoreRingCard(
+                            score: (scores['skill'] as num).toDouble(),
+                            maxScore: 100,
+                            label: 'Skill & Professional',
+                            color: AppColors.skill,
+                            icon: Icons.trending_up_rounded),
+                        ScoreRingCard(
+                            score: (scores['discipline'] as num).toDouble(),
+                            maxScore: 100,
+                            label: 'Discipline',
+                            color: AppColors.discipline,
+                            icon: Icons.verified_rounded),
+                        ScoreRingCard(
+                            score: (scores['leadership'] as num).toDouble(),
+                            maxScore: 100,
+                            label: 'Leadership',
+                            color: AppColors.leadership,
+                            icon: Icons.emoji_events_rounded),
                       ],
                     ),
 
                     if (_data?['mentor_remarks'] != null) ...[
                       const SizedBox(height: 16),
-                      _RemarkCard('Mentor Remarks', _data!['mentor_remarks'], AppColors.mentorColor),
+                      _RemarkCard('Mentor Remarks', _data!['mentor_remarks'],
+                          AppColors.mentorColor),
                     ],
                     if (_data?['hod_remarks'] != null) ...[
                       const SizedBox(height: 8),
-                      _RemarkCard('HOD Remarks', _data!['hod_remarks'], AppColors.hodColor),
+                      _RemarkCard('HOD Remarks', _data!['hod_remarks'],
+                          AppColors.hodColor),
                     ],
                     const SizedBox(height: 32),
                   ]),
@@ -95,14 +127,17 @@ class _RemarkCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 13)),
+        Text(title,
+            style: TextStyle(
+                fontWeight: FontWeight.w700, color: color, fontSize: 13)),
         const SizedBox(height: 6),
-        Text(remark, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+        Text(remark,
+            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
       ]),
     );
   }

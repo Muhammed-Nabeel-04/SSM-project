@@ -168,8 +168,17 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
 
+    if user.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+
     if user.role.value != payload.get("role"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Role mismatch")
+
+    if not validate_session_in_db(db, token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or has been revoked",
+        )
 
     return user
 

@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
-import '../../widgets/common_widgets.dart';
 import '../auth/two_factor_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -178,12 +177,16 @@ class _DetailsTabState extends State<_DetailsTab> {
     });
     try {
       final payload = <String, dynamic>{};
-      if (_phoneCtrl.text.trim().isNotEmpty)
+      if (_phoneCtrl.text.trim().isNotEmpty) {
         payload['phone'] = _phoneCtrl.text.trim();
-      if (_emailCtrl.text.trim().isNotEmpty)
+      }
+      if (_emailCtrl.text.trim().isNotEmpty) {
         payload['email'] = _emailCtrl.text.trim();
+      }
 
       await ApiService.updateProfile(payload);
+      if (!mounted) return;
+
       final auth = context.read<AuthProvider>();
       auth.updateProfileLocally(payload);
 
@@ -193,17 +196,18 @@ class _DetailsTabState extends State<_DetailsTab> {
         _message = 'Profile updated successfully!';
       });
 
-      if (auth.mustChangePassword && mounted) {
+      if (auth.mustChangePassword) {
         auth.clearMustChangePassword();
         final role = auth.role ?? 'student';
-        if (role == 'student')
+        if (role == 'student') {
           context.go('/student/dashboard');
-        else if (role == 'mentor')
+        } else if (role == 'mentor') {
           context.go('/mentor/dashboard');
-        else if (role == 'hod')
+        } else if (role == 'hod') {
           context.go('/hod/dashboard');
-        else
+        } else {
           context.go('/admin/dashboard');
+        }
       }
     } on ApiException catch (e) {
       setState(() {
@@ -226,7 +230,7 @@ class _DetailsTabState extends State<_DetailsTab> {
           child: Column(children: [
             CircleAvatar(
               radius: 38,
-              backgroundColor: AppColors.primary.withOpacity(0.12),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
               child: Text(
                 (p?['name'] ?? '?').substring(0, 1).toUpperCase(),
                 style: const TextStyle(
@@ -249,7 +253,7 @@ class _DetailsTabState extends State<_DetailsTab> {
         const SizedBox(height: 24),
 
         // ── Read-only fields ───────────────────────────────────────────────
-        _SectionLabel('Account Info'),
+        const _SectionLabel('Account Info'),
         _ReadOnlyField('Name', p?['name'] ?? '—', Icons.person_rounded),
         _ReadOnlyField('Register Number', p?['register_number'] ?? '—',
             Icons.badge_outlined),
@@ -260,7 +264,7 @@ class _DetailsTabState extends State<_DetailsTab> {
               Icons.business_rounded),
 
         const SizedBox(height: 8),
-        _SectionLabel('Editable Details'),
+        const _SectionLabel('Editable Details'),
 
         // Email
         _field('Email', _emailCtrl, Icons.email_outlined,
@@ -272,7 +276,7 @@ class _DetailsTabState extends State<_DetailsTab> {
         // Student-only fields — academic info is read-only (set by admin)
         if (widget.role == 'student') ...[
           const SizedBox(height: 4),
-          _SectionLabel('Academic Info (set by admin)'),
+          const _SectionLabel('Academic Info (set by admin)'),
           _ReadOnlyField(
             'Semester',
             _semCtrl.text.isEmpty ? 'Not set' : 'Semester ${_semCtrl.text}',
@@ -303,11 +307,11 @@ class _DetailsTabState extends State<_DetailsTab> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: (_success ? AppColors.success : AppColors.error)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                     color: (_success ? AppColors.success : AppColors.error)
-                        .withOpacity(0.3)),
+                        .withValues(alpha: 0.3)),
               ),
               child: Row(children: [
                 Icon(
@@ -442,14 +446,14 @@ class _PasswordTabState extends State<_PasswordTab> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.06),
+            color: AppColors.primary.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(children: [
-            const Icon(Icons.info_outline_rounded,
+          child: const Row(children: [
+            Icon(Icons.info_outline_rounded,
                 color: AppColors.primary, size: 18),
-            const SizedBox(width: 10),
-            const Expanded(
+            SizedBox(width: 10),
+            Expanded(
               child: Text(
                 'Register number cannot be changed.\nContact admin if you need it updated.',
                 style: TextStyle(color: AppColors.primary, fontSize: 12),
@@ -477,11 +481,11 @@ class _PasswordTabState extends State<_PasswordTab> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: (_success ? AppColors.success : AppColors.error)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                     color: (_success ? AppColors.success : AppColors.error)
-                        .withOpacity(0.3)),
+                        .withValues(alpha: 0.3)),
               ),
               child: Row(children: [
                 Icon(
@@ -596,9 +600,9 @@ class _RoleBadge extends StatelessWidget {
       margin: const EdgeInsets.only(top: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(label,
           style: TextStyle(
@@ -644,7 +648,7 @@ class _SecurityTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: is2FAEnabled
-                    ? const Color(0xFF06D6A0).withOpacity(0.4)
+                    ? const Color(0xFF06D6A0).withValues(alpha: 0.4)
                     : AppColors.border,
               ),
             ),
@@ -654,7 +658,7 @@ class _SecurityTab extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       (is2FAEnabled ? const Color(0xFF06D6A0) : Colors.orange)
-                          .withOpacity(0.12),
+                          .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -690,7 +694,8 @@ class _SecurityTab extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: AppColors.textLight),
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textLight),
             ]),
           ),
         ),

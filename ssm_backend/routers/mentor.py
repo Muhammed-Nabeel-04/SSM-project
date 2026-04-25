@@ -179,8 +179,8 @@ def get_activity_detail(
         "submitted_date": activity.submitted_at.strftime("%d %b %Y %I:%M %p") if activity.submitted_at else None,
         "rejection_reason": activity.mentor_note if activity.mentor_status.value == "rejected" else None,
         "file_url": (
-            storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(activity.file_path)
-            if activity.file_path else None
+            storage_service.get_download_url(activity.file_path)
+            if activity.file_path and storage_service.enabled else None
         ),
         "filename": activity.original_filename,
         "ocr_status": activity.ocr_status.value,
@@ -274,8 +274,8 @@ def get_form_details(
                 "has_file": a.file_path is not None,
                 "filename": a.original_filename,
                 "file_url": (
-                    storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(a.file_path)
-                    if a.file_path else None
+                    storage_service.get_download_url(a.file_path)
+                    if a.file_path and storage_service.enabled else None
                 ),
                 "submitted_at": a.submitted_at.isoformat() if a.submitted_at else None,
                 "data": {k: v for k, v in {
@@ -375,7 +375,7 @@ def submit_review(
         from models.user import User as UserModel, UserRole
         hod = db.query(UserModel).filter(
             UserModel.department_id == form.student.department_id,
-            UserModel.role == "hod",
+            UserModel.role == UserRole.HOD,
             UserModel.is_active == True,
         ).first()
         if hod:

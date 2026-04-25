@@ -41,7 +41,8 @@ class User(Base):
     is_active       = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
     is_2fa_enabled  = Column(Boolean, default=False)
-    totp_secret     = Column(String(64), nullable=True)   # base32 secret for TOTP
+    # Encrypted Fernet payloads are much longer than raw base32 secrets.
+    totp_secret     = Column(String(512), nullable=True)
     created_at      = Column(DateTime, default=datetime.utcnow)
     updated_at      = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at      = Column(DateTime, nullable=True)

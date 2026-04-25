@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-import '../config/constants.dart';
-
 /// Wrap any screen with this to show an offline banner automatically.
 /// Usage: OfflineWrapper(child: YourScreen())
 class OfflineWrapper extends StatefulWidget {

@@ -124,17 +124,17 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
             padding: const EdgeInsets.all(28),
             color: AppColors.adminColor,
             child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.apartment_rounded,
+                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.apartment_rounded,
                   color: Colors.white, size: 36),
-              const SizedBox(height: 12),
-              const Text('Department Setup',
+              SizedBox(height: 12),
+              Text('Department Setup',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              const Text(
+              SizedBox(height: 4),
+              Text(
                 'Add your college departments here.\n'
                 'You can always come back to add more.',
                 style: TextStyle(color: Colors.white70, fontSize: 13),
@@ -164,8 +164,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                                     dense: true,
                                     leading: CircleAvatar(
                                       radius: 16,
-                                      backgroundColor:
-                                          AppColors.success.withOpacity(0.1),
+                                      backgroundColor: AppColors.success
+                                          .withValues(alpha: 0.1),
                                       child: const Icon(Icons.check_rounded,
                                           color: AppColors.success, size: 14),
                                     ),
@@ -231,7 +231,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: AppColors.divider.withOpacity(0.4),
+                                color: AppColors.divider.withValues(alpha: 0.4),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: AppColors.divider),
                               ),
@@ -246,8 +246,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                                   margin: const EdgeInsets.only(bottom: 8),
                                   child: ListTile(
                                     leading: CircleAvatar(
-                                      backgroundColor:
-                                          AppColors.adminColor.withOpacity(0.1),
+                                      backgroundColor: AppColors.adminColor
+                                          .withValues(alpha: 0.1),
                                       child: Text(
                                           e.value['code']!.substring(0, 1),
                                           style: const TextStyle(

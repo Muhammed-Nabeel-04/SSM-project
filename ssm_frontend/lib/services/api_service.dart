@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'dart:async'; // ✅ ADD THIS if not present
-import 'dart:io'; // ✅ Should already be there
+import 'dart:async';
 
-import '../config/constants.dart';
 import 'token_service.dart';
 import '../core/app_config.dart';
 
@@ -19,19 +17,19 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static final _base = Uri.parse(AppConfig.baseUrl);
-  static const _kTimeout = Duration(seconds: 30);
+  // static final _base = Uri.parse(AppConfig.baseUrl);
+  // static const _kTimeout = Duration(seconds: 30);
 
-  static Future<http.Response> _get(Uri url, {Map<String, String>? headers}) =>
-      http.get(url, headers: headers).timeout(_kTimeout);
-  static Future<http.Response> _post(Uri url,
-          {Map<String, String>? headers, Object? body}) =>
-      http.post(url, headers: headers, body: body).timeout(_kTimeout);
-  static Future<http.Response> _put(Uri url,
-          {Map<String, String>? headers, Object? body}) =>
-      http.put(url, headers: headers, body: body).timeout(_kTimeout);
-  static Future<http.Response> _del(Uri url, {Map<String, String>? headers}) =>
-      http.delete(url, headers: headers).timeout(_kTimeout);
+  // static Future<http.Response> _get(Uri url, {Map<String, String>? headers}) =>
+  //     http.get(url, headers: headers).timeout(_kTimeout);
+  // static Future<http.Response> _post(Uri url,
+  //         {Map<String, String>? headers, Object? body}) =>
+  //     http.post(url, headers: headers, body: body).timeout(_kTimeout);
+  // static Future<http.Response> _put(Uri url,
+  //         {Map<String, String>? headers, Object? body}) =>
+  //     http.put(url, headers: headers, body: body).timeout(_kTimeout);
+  // static Future<http.Response> _del(Uri url, {Map<String, String>? headers}) =>
+  //     http.delete(url, headers: headers).timeout(_kTimeout);
 
   // ─── HELPERS ──────────────────────────────────────────────
 
@@ -203,7 +201,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getFormTimeline(int formId) async {
     final res = await http
-        .get(_url('/student/form/$formId/score'), headers: await _authHeaders())
+        .get(_url('/student/form/$formId/timeline'),
+            headers: await _authHeaders())
         .timeout(_timeout, onTimeout: () => throw _timeoutError());
     return _handle(res);
   }
@@ -663,8 +662,9 @@ class ApiService {
   }) async {
     final params = <String, String>{};
     if (academicYear != null) params['academic_year'] = academicYear;
-    if (currentSemester != null)
+    if (currentSemester != null) {
       params['current_semester'] = currentSemester.toString();
+    }
     final res = await http
         .put(_url('/settings/update', params), headers: await _authHeaders())
         .timeout(_timeout, onTimeout: () => throw _timeoutError());

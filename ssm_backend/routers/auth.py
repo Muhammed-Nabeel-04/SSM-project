@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from database import get_db
+from config import settings
 from models.user import User, UserRole
 from schemas.auth import (
     LoginRequest, TokenResponse, ChangePasswordRequest,
@@ -18,24 +19,30 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def _encrypt_totp(secret: str) -> str:
-    import os
     from cryptography.fernet import Fernet
-    key = os.environ.get("TOTP_ENCRYPTION_KEY", "").encode()
+    key = settings.TOTP_ENCRYPTION_KEY.encode()
     if not key:
-        return secret
+     raise RuntimeError("TOTP_ENCRYPTION_KEY env var is not set")
     return Fernet(key).encrypt(secret.encode()).decode()
 
 
 def _decrypt_totp(encrypted: str) -> str:
-    import os
     from cryptography.fernet import Fernet
-    key = os.environ.get("TOTP_ENCRYPTION_KEY", "").encode()
+    key = settings.TOTP_ENCRYPTION_KEY.encode()
     if not key:
         return encrypted
     try:
         return Fernet(key).decrypt(encrypted.encode()).decode()
     except Exception:
         return encrypted  # fallback for existing plaintext rows
+
+
+def _require_totp_encryption_key() -> None:
+    if settings.is_production and not settings.TOTP_ENCRYPTION_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="TOTP encryption is not configured on the server.",
+        )
 
 
 # ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -239,6 +246,8 @@ def setup_2fa(
     User must then call /auth/2fa/enable with the first valid code to activate.
     """
     import pyotp
+
+    _require_totp_encryption_key()
 
     secret = pyotp.random_base32()
     totp   = pyotp.TOTP(secret)

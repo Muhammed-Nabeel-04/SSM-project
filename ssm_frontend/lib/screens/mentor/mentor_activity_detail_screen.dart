@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import '../shared/document_viewer_screen.dart';
 
 import '../../config/constants.dart';
@@ -162,14 +162,14 @@ class _MentorActivityDetailScreenState
             if (status == 'rejected' &&
                 _activity!['rejection_reason'] != null) ...[
               Card(
-                color: AppColors.rejected.withOpacity(0.05),
+                color: AppColors.rejected.withValues(alpha: 0.05),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.info_outline_rounded,
                               color: AppColors.rejected, size: 20),
                           SizedBox(width: 8),

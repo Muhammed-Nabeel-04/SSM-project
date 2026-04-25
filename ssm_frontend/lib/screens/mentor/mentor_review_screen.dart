@@ -233,8 +233,9 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading)
+    if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final student = _data?['student'];
     final currentScore = _data?['current_score'];
@@ -277,7 +278,7 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                   if (currentScore != null)
                     Column(children: [
                       Text(
-                          '${(currentScore['grand_total'] as num).toStringAsFixed(0)}',
+                          (currentScore['grand_total'] as num).toStringAsFixed(0),
                           style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 20,
@@ -327,9 +328,10 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: color.withOpacity(0.3)),
+                          border:
+                              Border.all(color: color.withValues(alpha: 0.3)),
                         ),
                         child: Text(status.toUpperCase(),
                             style: TextStyle(
@@ -618,10 +620,10 @@ class _MentorReviewScreenState extends State<MentorReviewScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.hodColor.withOpacity(0.08),
+                  color: AppColors.hodColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: AppColors.hodColor.withOpacity(0.3)),
+                  border: Border.all(
+                      color: AppColors.hodColor.withValues(alpha: 0.3)),
                 ),
                 child:
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # Supabase (for File Storage)
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    SUPABASE_SIGNED_URL_EXPIRE_SECONDS: int = 300
 
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost,https://noisy-unit-b55c.nabeelm...workers.dev"

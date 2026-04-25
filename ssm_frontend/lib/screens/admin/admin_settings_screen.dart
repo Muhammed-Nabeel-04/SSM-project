@@ -64,6 +64,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         academicYear: _yearCtrl.text.trim(),
         currentSemester: _selectedSemester,
       );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Settings saved!'),
         backgroundColor: AppColors.success,
@@ -296,7 +297,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.06),
+                        color: AppColors.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(children: [
@@ -351,15 +352,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.mentorReview.withOpacity(0.08),
+                        color: AppColors.mentorReview.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: AppColors.mentorReview.withOpacity(0.3)),
+                            color:
+                                AppColors.mentorReview.withValues(alpha: 0.3)),
                       ),
-                      child: Column(
+                      child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(children: [
+                            Row(children: [
                               Icon(Icons.info_outline_rounded,
                                   color: AppColors.mentorReview, size: 16),
                               SizedBox(width: 8),
@@ -369,7 +371,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                       fontSize: 13,
                                       color: AppColors.mentorReview)),
                             ]),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             _BulletPoint('All active students → semester +1'),
                             _BulletPoint('New blank form created per student'),
                             _BulletPoint('Old forms & scores kept forever'),

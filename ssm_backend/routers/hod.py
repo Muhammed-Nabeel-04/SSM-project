@@ -9,6 +9,7 @@ from schemas.ssm import HODReview
 from services.security import require_hod
 from services.scoring import calculate_and_save
 from services.notifications import push_notification
+from models.user import User as UserModel
 
 router = APIRouter(prefix="/hod", tags=["HOD"])
 
@@ -35,7 +36,7 @@ def hod_dashboard(
 ):
     """Department-scoped: all forms pending HOD approval."""
     # Get all students in this department
-    from models.user import User as UserModel
+    
 
     dept_students = db.query(UserModel).filter(
         UserModel.department_id == current_user.department_id
@@ -92,7 +93,7 @@ def get_form(
         "form_id": form.id,
         "student": {"name": form.student.name, "register_number": form.student.register_number},
         "academic_year": form.academic_year,
-        "status": form.status,
+        "status": form.status.value,
         "mentor_remarks": form.mentor_remarks,
         "current_scores": {
             "academic": sc.academic_score if sc else 0,
@@ -182,18 +183,18 @@ def approve_form(
 
 @router.get("/all-students")
 def hod_all_students(
-    limit: int = 50,
+    limit: int = 500,
     offset: int = 0,
     current_user: User = Depends(require_hod),
     db: Session = Depends(get_db),
 ):
     """All students in HOD's department with their latest form status."""
-    from models.user import User as UserModel
+    
 
     
 
     from sqlalchemy import func
-    from models.user import User as UserModel
+    
 
     latest = (
         db.query(SSMForm.student_id, func.max(SSMForm.id).label("max_id"))
@@ -243,7 +244,7 @@ def hod_approved(
     db: Session = Depends(get_db),
 ):
     """All approved forms in HOD's department."""
-    from models.user import User as UserModel
+    
 
     dept_students = db.query(UserModel).filter(
         UserModel.department_id == current_user.department_id,
@@ -289,7 +290,7 @@ def department_report(
     db: Session = Depends(get_db),
 ):
     """Department analytics — HOD only sees their dept."""
-    from models.user import User as UserModel
+    
 
     dept_students = db.query(UserModel).filter(
         UserModel.department_id == current_user.department_id

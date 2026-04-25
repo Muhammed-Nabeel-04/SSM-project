@@ -116,8 +116,9 @@ class _HodApprovalScreenState extends State<HodApprovalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading)
+    if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final student = _data?['student'];
     final scores = _data?['current_scores'];
@@ -184,7 +185,7 @@ class _HodApprovalScreenState extends State<HodApprovalScreen> {
                         color: AppColors.leadership,
                         icon: Icons.emoji_events_rounded)),
                 const SizedBox(width: 8),
-                Expanded(child: const SizedBox()),
+                const Expanded(child: SizedBox()),
               ]),
             ],
 
@@ -195,10 +196,10 @@ class _HodApprovalScreenState extends State<HodApprovalScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.mentorColor.withOpacity(0.06),
+                  color: AppColors.mentorColor.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: AppColors.mentorColor.withOpacity(0.2)),
+                  border: Border.all(
+                      color: AppColors.mentorColor.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,10 +284,10 @@ class _HodApprovalScreenState extends State<HodApprovalScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: _statusColor(formStatus).withOpacity(0.08),
+                  color: _statusColor(formStatus).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: _statusColor(formStatus).withOpacity(0.3)),
+                      color: _statusColor(formStatus).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

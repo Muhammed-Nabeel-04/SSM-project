@@ -4,9 +4,11 @@ from config import settings
 
 logger = logging.getLogger("ssm.storage")
 
+
 class SupabaseStorageService:
     def __init__(self):
         self.bucket_name = "ssm-files"
+        self.signed_url_expires_in = settings.SUPABASE_SIGNED_URL_EXPIRE_SECONDS
         logger.info(f"SUPABASE_URL present: {bool(settings.SUPABASE_URL)}")
         logger.info(f"SUPABASE_KEY present: {bool(settings.SUPABASE_KEY)}")
         if settings.SUPABASE_URL and settings.SUPABASE_KEY:
@@ -46,6 +48,46 @@ class SupabaseStorageService:
         except Exception as e:
             logger.error(f"Failed to upload {file_path} to Supabase: {str(e)}")
             raise e
+
+    def get_download_url(self, file_path: str) -> str:
+        """Return a short-lived signed URL for a private object."""
+        if not self.enabled or not self.client:
+            raise Exception("Storage not configured")
+
+        try:
+            signed = self.client.storage.from_(self.bucket_name).create_signed_url(
+                file_path,
+                self.signed_url_expires_in,
+            )
+            return _normalize_signed_url(signed)
+        except Exception as e:
+            logger.error(f"Failed to create signed URL for {file_path}: {str(e)}")
+            raise e
+
+
+def _normalize_signed_url(payload) -> str:
+    if isinstance(payload, str):
+        url = payload
+    elif isinstance(payload, dict):
+        url = (
+            payload.get("signedURL")
+            or payload.get("signedUrl")
+            or payload.get("signed_url")
+            or payload.get("url")
+        )
+    else:
+        url = None
+
+    if not url:
+        raise ValueError("Supabase did not return a signed URL")
+
+    if isinstance(url, str) and url.startswith("http"):
+        return url
+
+    if isinstance(url, str) and url.startswith("/"):
+        return f"{settings.SUPABASE_URL.rstrip('/')}{url}"
+
+    raise ValueError("Supabase returned an invalid signed URL")
 
 
 storage_service = SupabaseStorageService()

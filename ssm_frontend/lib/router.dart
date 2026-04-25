@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'services/token_service.dart';
@@ -100,8 +99,9 @@ GoRouter buildRouter(AuthProvider authProvider) {
       if (path == '/profile') return null;
       if (path == '/setup') return null;
       if (path == '/splash') return null;
-      if (path.startsWith('/student') && auth.role != 'student')
+      if (path.startsWith('/student') && auth.role != 'student') {
         return '/login';
+      }
       if (path.startsWith('/mentor') && auth.role != 'mentor') return '/login';
       if (path.startsWith('/hod') && auth.role != 'hod') return '/login';
       if (path.startsWith('/admin') && auth.role != 'admin') return '/login';

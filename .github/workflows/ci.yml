@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ssm_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: python -m pip install --upgrade pip && pip install -r ../requirements.txt
+
+      - name: Compile backend sources
+        run: python -m py_compile config.py database.py main.py services/security.py services/storage.py routers/auth.py routers/files.py routers/activity.py routers/student.py routers/mentor.py
+
+      - name: Run backend tests
+        run: python -m unittest discover -s tests
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ssm_frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install frontend dependencies
+        run: flutter pub get
+
+      - name: Analyze frontend
+        run: flutter analyze
+
+      - name: Run frontend tests
+        run: flutter test

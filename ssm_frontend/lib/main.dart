@@ -6,16 +6,15 @@ import 'config/constants.dart';
 import 'router.dart' show buildRouter;
 import 'services/auth_provider.dart';
 import 'services/api_service.dart';
-import 'widgets/offline_wrapper.dart';
 import 'core/app_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.init(); // Add this line
+  setupCrashHandlers();
+  await AppConfig.init();
   runApp(const SSMApp());
 }
 
-// Function to handle global errors (ensure this is defined in your project)
 void setupCrashHandlers() {
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
@@ -36,7 +35,7 @@ class SSMApp extends StatelessWidget {
             // Fetch system settings to sync academic year globally
             ApiService.getSystemSettings()
                 .then((data) {
-                  if (data != null && data['academic_year'] != null) {
+                  if (data['academic_year'] != null) {
                     AppStrings.academicYear = data['academic_year'];
                   }
                 })

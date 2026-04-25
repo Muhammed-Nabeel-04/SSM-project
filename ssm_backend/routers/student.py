@@ -31,6 +31,38 @@ def _get_own_form(student_id: int, form_id: int, db: Session) -> SSMForm:
     return form
 
 
+def _serialize_score(form: SSMForm) -> dict | None:
+    if not form.calculated_score:
+        return None
+
+    sc = form.calculated_score
+    return {
+        "academic": sc.academic_score,
+        "development": sc.development_score,
+        "skill": sc.skill_score,
+        "discipline": sc.discipline_score,
+        "leadership": sc.leadership_score,
+        "grand_total": sc.grand_total,
+        "star_rating": sc.star_rating,
+    }
+
+
+def _build_timeline_payload(form: SSMForm) -> dict:
+    return {
+        "form_id": form.id,
+        "academic_year": form.academic_year,
+        "status": form.status.value,
+        "score": _serialize_score(form),
+        "mentor_remarks": form.mentor_remarks,
+        "hod_remarks": form.hod_remarks,
+        "rejection_reason": form.rejection_reason,
+        "submitted_at": form.submitted_at.isoformat() if form.submitted_at else None,
+        "rejected_at": form.rejected_at.isoformat() if form.rejected_at else None,
+        "approved_at": form.approved_at.isoformat() if form.approved_at else None,
+        "updated_at": form.updated_at.isoformat() if form.updated_at else None,
+    }
+
+
 # ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")
@@ -110,20 +142,20 @@ def view_score(
     if not form.calculated_score:
         raise HTTPException(status_code=404, detail="Score not yet calculated")
 
-    sc = form.calculated_score
     return {
         "academic_year": form.academic_year,
-        "status": form.status,
-        "scores": {
-            "academic": sc.academic_score,
-            "development": sc.development_score,
-            "skill": sc.skill_score,
-            "discipline": sc.discipline_score,
-            "leadership": sc.leadership_score,
-            "grand_total": sc.grand_total,
-            "star_rating": sc.star_rating,
-        },
+        "status": form.status.value,
+        "scores": _serialize_score(form),
         "mentor_remarks": form.mentor_remarks,
         "hod_remarks": form.hod_remarks,
     }
 
+
+@router.get("/form/{form_id}/timeline")
+def view_form_timeline(
+    form_id: int,
+    current_user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+):
+    form = _get_own_form(current_user.id, form_id, db)
+    return _build_timeline_payload(form)

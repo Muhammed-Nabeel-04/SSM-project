@@ -48,13 +48,10 @@ class _MentorDashboardState extends State<MentorDashboard>
         ),
       ]);
       setState(() {
-        _data = res[0] as Map<String, dynamic>;
-        _allStudents =
-            ((res[1] as Map<String, dynamic>)['items'] as List?) ?? [];
-        _activities =
-            ((res[2] as Map<String, dynamic>)['items'] as List?) ?? [];
-        _hodPending =
-            ((res[3] as Map<String, dynamic>)['items'] as List?) ?? [];
+        _data = res[0];
+        _allStudents = (res[1]['items'] as List?) ?? [];
+        _activities = (res[2]['items'] as List?) ?? [];
+        _hodPending = (res[3]['items'] as List?) ?? [];
         _loading = false;
       });
     } catch (e) {
@@ -280,27 +277,27 @@ class _MentorDashboardState extends State<MentorDashboard>
                     _hodPending == null
                         ? const Center(child: CircularProgressIndicator())
                         : _hodPending!.isEmpty
-                        ? const SingleChildScrollView(
-                            physics: AlwaysScrollableScrollPhysics(),
-                            child: SizedBox(
-                              height: 300,
-                              child: Center(
-                                child: Text(
-                                  'No forms with HOD',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
+                            ? const SingleChildScrollView(
+                                physics: AlwaysScrollableScrollPhysics(),
+                                child: SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text(
+                                      'No forms with HOD',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _hodPending!.length,
+                                itemBuilder: (_, i) =>
+                                    _HodPendingCard(form: _hodPending![i]),
                               ),
-                            ),
-                          )
-                        : ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _hodPending!.length,
-                            itemBuilder: (_, i) =>
-                                _HodPendingCard(form: _hodPending![i]),
-                          ),
                   ],
                 ),
               ),
@@ -334,8 +331,8 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
   int _count(String status) => status == 'all'
       ? widget.activities.length
       : widget.activities
-            .where((a) => (a['status'] ?? '').toLowerCase() == status)
-            .length;
+          .where((a) => (a['status'] ?? '').toLowerCase() == status)
+          .length;
 
   @override
   Widget build(BuildContext context) {
@@ -431,9 +428,9 @@ class _Chip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? c : c.withOpacity(0.1),
+          color: selected ? c : c.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? c : c.withOpacity(0.3)),
+          border: Border.all(color: selected ? c : c.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -451,8 +448,8 @@ class _Chip extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: selected
-                    ? Colors.white.withOpacity(0.25)
-                    : c.withOpacity(0.15),
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : c.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -656,10 +653,10 @@ class _ActivityCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.rejected.withOpacity(0.08),
+                  color: AppColors.rejected.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppColors.rejected.withOpacity(0.3),
+                    color: AppColors.rejected.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -865,10 +862,10 @@ class _StudentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.mentorReview.withOpacity(0.1),
+                  color: AppColors.mentorReview.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppColors.mentorReview.withOpacity(0.3),
+                    color: AppColors.mentorReview.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
@@ -987,10 +984,10 @@ class _HodPendingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
+                    color: AppColors.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(

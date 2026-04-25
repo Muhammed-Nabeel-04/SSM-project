@@ -694,8 +694,12 @@ def download_activity_file(
 
     from services.storage import storage_service
     from fastapi.responses import RedirectResponse
-    public_url = storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(act.file_path)
-    return RedirectResponse(url=public_url)
+
+    if not storage_service.enabled:
+        raise HTTPException(status_code=500, detail="Supabase Storage is not configured.")
+
+    signed_url = storage_service.get_download_url(act.file_path)
+    return RedirectResponse(url=signed_url)
 
 
 # ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -728,8 +732,8 @@ def _serialize_activity(act: StudentActivity, include_student: bool = False) -> 
         "has_file":       act.file_path is not None,
         "filename":       act.original_filename,
         "file_url": (
-            storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(act.file_path)
-            if act.file_path else None
+            storage_service.get_download_url(act.file_path)
+            if act.file_path and storage_service.enabled else None
         ),
         # Activity-specific data (only non-null fields)
         "data": {k: v for k, v in {

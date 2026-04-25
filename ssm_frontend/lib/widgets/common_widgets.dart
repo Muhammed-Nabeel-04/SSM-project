@@ -13,14 +13,14 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
-        style: TextStyle(
-            color: color, fontWeight: FontWeight.w600, fontSize: 12),
+        style:
+            TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
       ),
     );
   }
@@ -90,7 +90,7 @@ class ScoreRingCard extends StatelessWidget {
                 height: 72,
                 child: CircularProgressIndicator(
                   value: pct,
-                  backgroundColor: color.withOpacity(0.15),
+                  backgroundColor: color.withValues(alpha: 0.15),
                   valueColor: AlwaysStoppedAnimation(color),
                   strokeWidth: 7,
                 ),
@@ -101,14 +101,12 @@ class ScoreRingCard extends StatelessWidget {
             Text(
               score.toStringAsFixed(0),
               style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: color),
+                  fontSize: 22, fontWeight: FontWeight.w800, color: color),
             ),
             Text(
               '/ ${maxScore.toStringAsFixed(0)}',
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary),
+              style:
+                  const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 4),
             Text(
@@ -147,9 +145,9 @@ class SectionHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(children: [
         Icon(icon, color: color, size: 20),
@@ -165,7 +163,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             'Max $maxPoints pts',
             style: TextStyle(
-                color: color.withOpacity(0.7),
+                color: color.withValues(alpha: 0.7),
                 fontSize: 12,
                 fontWeight: FontWeight.w500),
           ),
@@ -202,13 +200,12 @@ class AppDropdown<T> extends StatelessWidget {
               color: AppColors.textPrimary)),
       const SizedBox(height: 6),
       DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         items: items,
         onChanged: enabled ? onChanged : null,
         decoration: const InputDecoration(),
         icon: const Icon(Icons.keyboard_arrow_down_rounded),
-        style: const TextStyle(
-            color: AppColors.textPrimary, fontSize: 14),
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       ),
       const SizedBox(height: 14),
     ]);
@@ -245,8 +242,7 @@ class AppNumberField extends StatelessWidget {
       TextFormField(
         controller: controller,
         enabled: enabled,
-        keyboardType:
-            const TextInputType.numberWithOptions(decimal: true),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
           hintText: hint,
           suffixText: suffix,
@@ -263,8 +259,7 @@ class LoadingOverlay extends StatelessWidget {
   final bool loading;
   final Widget child;
 
-  const LoadingOverlay(
-      {required this.loading, required this.child, super.key});
+  const LoadingOverlay({required this.loading, required this.child, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -298,17 +293,16 @@ class ErrorBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
         const Icon(Icons.error_outline, color: AppColors.error, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Text(message,
-              style: const TextStyle(
-                  color: AppColors.error, fontSize: 13)),
+              style: const TextStyle(color: AppColors.error, fontSize: 13)),
         ),
       ]),
     );
@@ -321,8 +315,7 @@ class GrandTotalCard extends StatelessWidget {
   final double total;
   final int stars;
 
-  const GrandTotalCard(
-      {required this.total, required this.stars, super.key});
+  const GrandTotalCard({required this.total, required this.stars, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +330,7 @@ class GrandTotalCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -350,9 +343,7 @@ class GrandTotalCard extends StatelessWidget {
         Text(
           '${total.toStringAsFixed(0)} / 500',
           style: const TextStyle(
-              color: Colors.white,
-              fontSize: 42,
-              fontWeight: FontWeight.w800),
+              color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         StarRating(stars: stars, size: 28),
@@ -360,9 +351,7 @@ class GrandTotalCard extends StatelessWidget {
         Text(
           _ratingLabel(stars),
           style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w500),
+              color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
         ),
       ]),
     );

@@ -3,7 +3,6 @@ import 'dart:async';
 
 import '../services/api_service.dart';
 import '../screens/shared/notifications_screen.dart';
-import '../config/constants.dart';
 
 /// Drop this widget into any AppBar's `actions` list to get a live notification bell.
 /// Polls every 60 seconds for unread count.

@@ -50,7 +50,6 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.read<AuthProvider>();
     final activities = (_data?['activities'] as List?) ?? [];
     final score = _data?['live_score'] as Map?;
 
@@ -147,10 +146,11 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           margin: const EdgeInsets.symmetric(horizontal: 16),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
+                            color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: AppColors.success.withOpacity(0.3)),
+                                color:
+                                    AppColors.success.withValues(alpha: 0.3)),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -184,7 +184,8 @@ class _ActivityDashboardState extends State<ActivityDashboard> {
                           child: Column(children: [
                             Icon(Icons.playlist_add_rounded,
                                 size: 56,
-                                color: AppColors.textLight.withOpacity(0.4)),
+                                color:
+                                    AppColors.textLight.withValues(alpha: 0.4)),
                             const SizedBox(height: 12),
                             Text(
                               _filterCategory == 'all'
@@ -473,7 +474,7 @@ class _ScorePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       Text(score.toStringAsFixed(0),
-          style: TextStyle(
+          style: const TextStyle(
               color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
       Text(label, style: const TextStyle(color: Colors.white60, fontSize: 9)),
     ]);
@@ -564,7 +565,7 @@ class _ActivityCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10)),
               child: Icon(icon, color: color, size: 20),
             ),
@@ -585,9 +586,9 @@ class _ActivityCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: statusColor.withOpacity(0.3)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
               ),
               child: Text(statusLabel,
                   style: TextStyle(
@@ -632,9 +633,10 @@ class _ActivityCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.08),
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                border:
+                    Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
               child: Row(children: [
                 const Icon(Icons.warning_amber_rounded,

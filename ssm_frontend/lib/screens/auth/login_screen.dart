@@ -23,10 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
   int _selectedRole = 0;
 
   static const _roles = [
-    _RoleOption('Student',  Icons.school_rounded,           Color(0xFF4361EE), isStudent: true),
-    _RoleOption('Mentor',   Icons.supervisor_account_rounded, Color(0xFF7209B7), isStudent: false),
-    _RoleOption('HOD',      Icons.admin_panel_settings_rounded, Color(0xFF3A86FF), isStudent: false),
-    _RoleOption('Admin',    Icons.manage_accounts_rounded,   Color(0xFF06D6A0), isStudent: false),
+    _RoleOption('Student', Icons.school_rounded, Color(0xFF4361EE),
+        isStudent: true),
+    _RoleOption('Mentor', Icons.supervisor_account_rounded, Color(0xFF7209B7),
+        isStudent: false),
+    _RoleOption('HOD', Icons.admin_panel_settings_rounded, Color(0xFF3A86FF),
+        isStudent: false),
+    _RoleOption('Admin', Icons.manage_accounts_rounded, Color(0xFF06D6A0),
+        isStudent: false),
   ];
 
   bool get _isStudent => _selectedRole == 0;
@@ -53,10 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => TwoFactorLoginScreen(
-            userId:   auth.pendingTwoFactorUserId!,
+            userId: auth.pendingTwoFactorUserId!,
             userName: auth.pendingTwoFactorUserName ?? 'User',
-            role:     auth.pendingTwoFactorRole ?? 'staff',
-            deptId:   auth.pendingTwoFactorDeptId,
+            role: auth.pendingTwoFactorRole ?? 'staff',
+            deptId: auth.pendingTwoFactorDeptId,
           ),
         ),
       );
@@ -98,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(Icons.school_rounded,
@@ -171,10 +175,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 color: selected
                                     ? r.color
-                                    : r.color.withOpacity(0.07),
+                                    : r.color.withValues(alpha: 0.07),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: r.color.withOpacity(selected ? 1 : 0.25),
+                                    color: r.color
+                                        .withValues(alpha: selected ? 1 : 0.25),
                                     width: selected ? 2 : 1),
                               ),
                               padding:
@@ -188,9 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13,
-                                        color: selected
-                                            ? Colors.white
-                                            : r.color)),
+                                        color:
+                                            selected ? Colors.white : r.color)),
                               ]),
                             ),
                           );
@@ -202,8 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _regController,
                         decoration: InputDecoration(
-                          labelText:
-                              _isStudent ? 'Register Number' : 'Email',
+                          labelText: _isStudent ? 'Register Number' : 'Email',
                           prefixIcon: Icon(_isStudent
                               ? Icons.badge_outlined
                               : Icons.email_outlined),
@@ -291,5 +294,6 @@ class _RoleOption {
   final IconData icon;
   final Color color;
   final bool isStudent;
-  const _RoleOption(this.label, this.icon, this.color, {required this.isStudent});
+  const _RoleOption(this.label, this.icon, this.color,
+      {required this.isStudent});
 }

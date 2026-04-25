@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
-import '../../widgets/common_widgets.dart';
 
 class AdminImportScreen extends StatefulWidget {
   const AdminImportScreen({super.key});
@@ -45,6 +44,7 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
       });
     } on ApiException catch (e) {
       setState(() => _uploading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
     }
@@ -69,9 +69,10 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.06),
+              color: AppColors.primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+              border:
+                  Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
             ),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -99,14 +100,15 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
               _rule('mentor_register_number',
                   'Required for students — import mentors first'),
               _rule('semester', 'Optional — 1 to 8 (students only)'),
-              _rule('year_of_study', 'Optional — 1 to 4 (or auto-calculated from semester)'),
+              _rule('year_of_study',
+                  'Optional — 1 to 4 (or auto-calculated from semester)'),
               _rule('batch', 'Optional — e.g. 2022-2026 (students only)'),
               _rule('section', 'Optional — e.g. A or B (students only)'),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.mentorReview.withOpacity(0.08),
+                  color: AppColors.mentorReview.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
@@ -132,7 +134,7 @@ class _AdminImportScreenState extends State<AdminImportScreen> {
                 ),
                 borderRadius: BorderRadius.circular(14),
                 color: _file != null
-                    ? AppColors.success.withOpacity(0.05)
+                    ? AppColors.success.withValues(alpha: 0.05)
                     : AppColors.background,
               ),
               child: Column(children: [
@@ -250,9 +252,9 @@ class _SummaryBox extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.2)),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Column(children: [
             Text(value,
@@ -276,7 +278,7 @@ class _ResultRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
+          color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(children: [

@@ -53,8 +53,8 @@ class _HodDashboardState extends State<HodDashboard>
         ApiService.getHodAllStudents(),
       ]);
       setState(() {
-        _data = res[0] as Map<String, dynamic>;
-        final studentsData = res[1] as Map<String, dynamic>;
+        _data = res[0];
+        final studentsData = res[1];
         _allStudents = (studentsData['items'] as List?) ?? [];
         _loading = false;
       });
@@ -362,7 +362,7 @@ class _ApprovedCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(children: [
               CircleAvatar(
-                backgroundColor: AppColors.approved.withOpacity(0.15),
+                backgroundColor: AppColors.approved.withValues(alpha: 0.15),
                 child: const Icon(Icons.check_circle_rounded,
                     color: AppColors.approved),
               ),
@@ -397,7 +397,7 @@ class _ApprovedCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.approved.withOpacity(0.1),
+                    color: AppColors.approved.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text('Approved',
@@ -574,9 +574,9 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.only(left: 10, right: 4, top: 3, bottom: 3),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(label,
@@ -654,8 +654,8 @@ class _StudentCard extends StatelessWidget {
             child: Row(children: [
               CircleAvatar(
                 backgroundColor: _hasSubmitted
-                    ? AppColors.hodColor.withOpacity(0.12)
-                    : AppColors.textLight.withOpacity(0.15),
+                    ? AppColors.hodColor.withValues(alpha: 0.12)
+                    : AppColors.textLight.withValues(alpha: 0.15),
                 radius: 22,
                 child: Text(
                   (student['student_name'] ?? 'S')
@@ -712,9 +712,10 @@ class _StudentCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: _statusColor.withOpacity(0.1),
+                    color: _statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _statusColor.withOpacity(0.3)),
+                    border:
+                        Border.all(color: _statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _statusLabel,
@@ -787,7 +788,7 @@ class _HodPendingCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.hodColor.withOpacity(0.1),
+                    color: AppColors.hodColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text('Review',

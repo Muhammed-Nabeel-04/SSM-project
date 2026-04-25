@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../shared/document_viewer_screen.dart';
 
 import '../../config/constants.dart';
@@ -74,7 +72,7 @@ class _MentorActivityScreenState extends State<MentorActivityScreen> {
                         children: [
                           Icon(Icons.check_circle_rounded,
                               size: 64,
-                              color: AppColors.success.withOpacity(0.4)),
+                              color: AppColors.success.withValues(alpha: 0.4)),
                           const SizedBox(height: 12),
                           const Text('No pending activities 🎉',
                               style: TextStyle(
@@ -199,7 +197,7 @@ class _ActivityReviewCardState extends State<_ActivityReviewCard> {
               Container(
                 padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10)),
                 child: Icon(icon, color: color, size: 20),
               ),
@@ -455,9 +453,9 @@ class _OcrChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(label,
           style: TextStyle(

@@ -16,18 +16,26 @@ class DeptReportScreen extends StatefulWidget {
 
 class _DeptReportScreenState extends State<DeptReportScreen> {
   Map<String, dynamic>? _data;
-  bool _loading    = true;
-  bool _exporting  = false;
+  bool _loading = true;
+  bool _exporting = false;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final d = await ApiService.getDeptReport(AppStrings.academicYear);
-      setState(() { _data = d; _loading = false; });
-    } catch (_) { setState(() => _loading = false); }
+      setState(() {
+        _data = d;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   // ── CSV EXPORT ────────────────────────────────────────────────────────────
@@ -39,7 +47,8 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
     try {
       final sb = StringBuffer();
       // Header
-      sb.writeln('Rank,Name,Register Number,Grand Total,Star Rating,Status,Academic Year');
+      sb.writeln(
+          'Rank,Name,Register Number,Grand Total,Star Rating,Status,Academic Year');
       for (int i = 0; i < students.length; i++) {
         final s = students[i];
         sb.writeln([
@@ -53,8 +62,9 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
         ].join(','));
       }
 
-      final dir  = await getTemporaryDirectory();
-      final file = File('${dir.path}/dept_report_${AppStrings.academicYear}.csv');
+      final dir = await getTemporaryDirectory();
+      final file =
+          File('${dir.path}/dept_report_${AppStrings.academicYear}.csv');
       await file.writeAsString(sb.toString());
 
       await Share.shareXFiles(
@@ -62,9 +72,10 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
         subject: 'Department SSM Report ${AppStrings.academicYear}',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'),
-              backgroundColor: AppColors.error));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Export failed: $e'),
+          backgroundColor: AppColors.error));
     } finally {
       setState(() => _exporting = false);
     }
@@ -83,8 +94,11 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
           if (!_loading && students.isNotEmpty)
             IconButton(
               icon: _exporting
-                  ? const SizedBox(height: 18, width: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.download_rounded),
               tooltip: 'Export CSV',
               onPressed: _exporting ? null : _exportCsv,
@@ -99,18 +113,29 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
               child: Column(children: [
                 // ── Summary row ───────────────────────────────────────────
                 Row(children: [
-                  Expanded(child: _StatCard('Total',
-                      _data?['total_forms']?.toString() ?? '0', AppColors.hodColor)),
+                  Expanded(
+                      child: _StatCard(
+                          'Total',
+                          _data?['total_forms']?.toString() ?? '0',
+                          AppColors.hodColor)),
                   const SizedBox(width: 8),
-                  Expanded(child: _StatCard('Approved',
-                      _data?['approved']?.toString() ?? '0', AppColors.approved)),
+                  Expanded(
+                      child: _StatCard(
+                          'Approved',
+                          _data?['approved']?.toString() ?? '0',
+                          AppColors.approved)),
                   const SizedBox(width: 8),
-                  Expanded(child: _StatCard('⭐×5',
-                      _data?['five_star']?.toString() ?? '0', AppColors.starGold)),
+                  Expanded(
+                      child: _StatCard(
+                          '⭐×5',
+                          _data?['five_star']?.toString() ?? '0',
+                          AppColors.starGold)),
                   const SizedBox(width: 8),
-                  Expanded(child: _StatCard('Avg',
-                      (_data?['average_score'] ?? 0).toStringAsFixed(1),
-                      AppColors.academic)),
+                  Expanded(
+                      child: _StatCard(
+                          'Avg',
+                          (_data?['average_score'] ?? 0).toStringAsFixed(1),
+                          AppColors.academic)),
                 ]),
                 const SizedBox(height: 20),
 
@@ -129,28 +154,32 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: _rankColor(i + 1).withOpacity(0.15),
+                          backgroundColor:
+                              _rankColor(i + 1).withValues(alpha: 0.15),
                           child: Text('${i + 1}',
                               style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   color: _rankColor(i + 1))),
                         ),
                         title: Text(s['student_name'] ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.w600,
-                                fontSize: 14)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14)),
                         subtitle: Text(s['register_number'] ?? '',
                             style: const TextStyle(fontSize: 12)),
                         trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                          Text(
-                            (s['grand_total'] ?? 0).toStringAsFixed(0),
-                            style: const TextStyle(fontWeight: FontWeight.w800,
-                                fontSize: 18, color: AppColors.primary),
-                          ),
-                          StarRating(stars: s['star_rating'] ?? 0, size: 13),
-                        ]),
+                              Text(
+                                (s['grand_total'] ?? 0).toStringAsFixed(0),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                    color: AppColors.primary),
+                              ),
+                              StarRating(
+                                  stars: s['star_rating'] ?? 0, size: 13),
+                            ]),
                       ),
                     );
                   }),
@@ -160,11 +189,11 @@ class _DeptReportScreenState extends State<DeptReportScreen> {
   }
 
   Color _rankColor(int rank) => switch (rank) {
-    1 => const Color(0xFFFFD700),
-    2 => const Color(0xFFC0C0C0),
-    3 => const Color(0xFFCD7F32),
-    _ => AppColors.primary,
-  };
+        1 => const Color(0xFFFFD700),
+        2 => const Color(0xFFC0C0C0),
+        3 => const Color(0xFFCD7F32),
+        _ => AppColors.primary,
+      };
 }
 
 class _StatCard extends StatelessWidget {
@@ -174,17 +203,19 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.08),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: color.withOpacity(0.2)),
-    ),
-    child: Column(children: [
-      Text(value, style: TextStyle(fontWeight: FontWeight.w800,
-          fontSize: 18, color: color)),
-      Text(label, style: const TextStyle(fontSize: 11,
-          color: AppColors.textSecondary)),
-    ]),
-  );
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(children: [
+          Text(value,
+              style: TextStyle(
+                  fontWeight: FontWeight.w800, fontSize: 18, color: color)),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
+        ]),
+      );
 }

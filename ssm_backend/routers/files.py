@@ -62,8 +62,8 @@ def download_document(
         raise HTTPException(status_code=500, detail="Supabase Storage is not configured.")
         
     try:
-        public_url = storage_service.client.storage.from_(storage_service.bucket_name).get_public_url(doc.file_path)
-        return RedirectResponse(public_url)
+        signed_url = storage_service.get_download_url(doc.file_path)
+        return RedirectResponse(signed_url)
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"File not found in cloud storage: {str(e)}")
 

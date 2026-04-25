@@ -42,7 +42,10 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
       setState(() => _error = 'Please enter the 6-digit code.');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final auth = context.read<AuthProvider>();
       final success = await auth.loginWith2FA(
@@ -50,7 +53,8 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
         code: code,
       );
       if (!success && mounted) {
-        setState(() => _error = auth.errorMessage ?? 'Invalid code. Please try again.');
+        setState(() =>
+            _error = auth.errorMessage ?? 'Invalid code. Please try again.');
       }
     } catch (e) {
       setState(() => _error = 'Verification failed. Please try again.');
@@ -79,7 +83,7 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(Icons.verified_user_rounded,
@@ -115,12 +119,17 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Enter Verification Code',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary)),
                   const SizedBox(height: 6),
                   const Text(
                     'Open your authenticator app and enter the 6-digit code shown for SSM System.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.5),
                   ),
                   const SizedBox(height: 28),
 
@@ -129,9 +138,11 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: roleColor.withOpacity(0.3)),
+                      border:
+                          Border.all(color: roleColor.withValues(alpha: 0.3)),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
                     child: TextField(
                       controller: _codeController,
                       keyboardType: TextInputType.number,
@@ -151,7 +162,10 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                       ),
                       decoration: const InputDecoration(
                         hintText: '••••••',
-                        hintStyle: TextStyle(letterSpacing: 10, fontSize: 28, color: AppColors.textLight),
+                        hintStyle: TextStyle(
+                            letterSpacing: 10,
+                            fontSize: 28,
+                            color: AppColors.textLight),
                         counterText: '',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -162,10 +176,12 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                   if (_error != null) ...[
                     const SizedBox(height: 10),
                     Row(children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 16),
+                      const Icon(Icons.error_outline,
+                          color: AppColors.error, size: 16),
                       const SizedBox(width: 6),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                          style: const TextStyle(
+                              color: AppColors.error, fontSize: 13)),
                     ]),
                   ],
 
@@ -181,11 +197,14 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
                             borderRadius: BorderRadius.circular(12)),
                       ),
                       child: _loading
-                          ? const SizedBox(width: 20, height: 20,
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(
                                   color: Colors.white, strokeWidth: 2.5))
                           : const Text('Verify Code',
-                              style: TextStyle(fontSize: 16,
+                              style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white)),
                     ),
@@ -209,10 +228,14 @@ class _TwoFactorLoginScreenState extends State<TwoFactorLoginScreen> {
 
   Color _roleColor(String role) {
     switch (role) {
-      case 'admin': return const Color(0xFF06D6A0);
-      case 'hod':   return const Color(0xFF3A86FF);
-      case 'mentor': return const Color(0xFF7209B7);
-      default:      return AppColors.primary;
+      case 'admin':
+        return const Color(0xFF06D6A0);
+      case 'hod':
+        return const Color(0xFF3A86FF);
+      case 'mentor':
+        return const Color(0xFF7209B7);
+      default:
+        return AppColors.primary;
     }
   }
 }

@@ -1,0 +1,16 @@
+# Root-level runtime artifacts
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local environment files
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../config/constants.dart';
 import '../../services/api_service.dart';
-import '../../widgets/common_widgets.dart';
 
 class AdminCreateUserScreen extends StatefulWidget {
   final String? initialRole;
@@ -270,7 +269,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                       if (_role != 'admin') ...[
                         const SizedBox(height: 4),
                         DropdownButtonFormField<int>(
-                          value: _deptId,
+                          initialValue: _deptId,
                           decoration: const InputDecoration(
                             labelText: 'Department *',
                             prefixIcon: Icon(Icons.business_rounded, size: 20),
@@ -314,7 +313,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                                 ]),
                               )
                             : DropdownButtonFormField<int>(
-                                value: _mentorId,
+                                initialValue: _mentorId,
                                 decoration: const InputDecoration(
                                   labelText: 'Mentor *',
                                   prefixIcon: Icon(
@@ -354,7 +353,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
 
                         // Semester dropdown
                         DropdownButtonFormField<int>(
-                          value: _semester,
+                          initialValue: _semester,
                           decoration: const InputDecoration(
                             labelText: 'Semester *',
                             prefixIcon: Icon(Icons.numbers_rounded, size: 20),
@@ -415,7 +414,7 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.06),
+                          color: AppColors.primary.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Row(children: [
@@ -444,13 +443,13 @@ class _AdminCreateUserScreenState extends State<AdminCreateUserScreen> {
                               color: (_success
                                       ? AppColors.success
                                       : AppColors.error)
-                                  .withOpacity(0.1),
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                   color: (_success
                                           ? AppColors.success
                                           : AppColors.error)
-                                      .withOpacity(0.3)),
+                                      .withValues(alpha: 0.3)),
                             ),
                             child: Row(children: [
                               Icon(

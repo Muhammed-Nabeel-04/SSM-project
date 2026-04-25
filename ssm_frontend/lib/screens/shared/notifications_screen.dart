@@ -78,7 +78,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text('$unreadCount new',
@@ -168,8 +168,9 @@ class _NotificationTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          color:
-              isRead ? Colors.transparent : AppColors.primary.withOpacity(0.04),
+          color: isRead
+              ? Colors.transparent
+              : AppColors.primary.withValues(alpha: 0.04),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +221,7 @@ class _NotificationTile extends StatelessWidget {
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 5),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
@@ -235,13 +236,13 @@ class _NotificationTile extends StatelessWidget {
   Color _iconBgColor(String icon) {
     switch (icon) {
       case 'check':
-        return const Color(0xFF06D6A0).withOpacity(0.12);
+        return const Color(0xFF06D6A0).withValues(alpha: 0.12);
       case 'warning':
-        return Colors.orange.withOpacity(0.12);
+        return Colors.orange.withValues(alpha: 0.12);
       case 'star':
-        return const Color(0xFFFFD700).withOpacity(0.15);
+        return const Color(0xFFFFD700).withValues(alpha: 0.15);
       default:
-        return AppColors.primary.withOpacity(0.10);
+        return AppColors.primary.withValues(alpha: 0.10);
     }
   }
 
@@ -297,11 +298,11 @@ class _EmptyState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.notifications_none_rounded,
-                size: 52, color: AppColors.primary.withOpacity(0.5)),
+                size: 52, color: AppColors.primary.withValues(alpha: 0.5)),
           ),
           const SizedBox(height: 20),
           const Text("You're all caught up!",

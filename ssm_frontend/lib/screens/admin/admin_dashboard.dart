@@ -45,9 +45,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ApiService.getAdminAnalytics(AppStrings.academicYear),
         ApiService.getTopStudents(AppStrings.academicYear),
       ]);
-      final topData = res[1] as Map<String, dynamic>;
+      final topData = res[1];
       setState(() {
-        _analytics = res[0] as Map<String, dynamic>;
+        _analytics = res[0];
         _topStudents = (topData['items'] as List?) ?? [];
         _loading = false;
       });
@@ -138,7 +138,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           children: [
                             CircleAvatar(
                               radius: 26,
-                              backgroundColor: Colors.white.withOpacity(0.25),
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.25),
                               child: Text(
                                 (auth.name ?? 'A')
                                     .substring(0, 1)
@@ -402,7 +403,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                         Colors.grey,
                                         Colors.brown
                                       ][i]
-                                    : AppColors.primary.withOpacity(0.7),
+                                    : AppColors.primary.withValues(alpha: 0.7),
                                 child: Text('${i + 1}',
                                     style: const TextStyle(
                                         color: Colors.white,
@@ -472,7 +473,8 @@ class _QuickActionCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.15), width: 1.5),
+            border:
+                Border.all(color: color.withValues(alpha: 0.15), width: 1.5),
           ),
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -482,7 +484,7 @@ class _QuickActionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -520,9 +522,9 @@ class _AdminStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         padding: const EdgeInsets.all(14),
         child: Row(children: [
