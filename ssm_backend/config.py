@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost,https://noisy-unit-b55c.nabeelm...workers.dev"
 
+    # 2FA Encryption
+    TOTP_ENCRYPTION_KEY: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

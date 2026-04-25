@@ -70,6 +70,17 @@ def submit_form(
     if form.status not in (FormStatus.DRAFT, FormStatus.REJECTED):
         raise HTTPException(status_code=400, detail="Form already submitted")
 
+    # Guard: if resubmitting after rejection, student must have
+    # added/edited at least one activity since the rejection.
+    if form.status == FormStatus.REJECTED:
+        rejected_at = form.rejected_at
+        edited_at   = form.last_student_edit_at
+        if rejected_at and (not edited_at or edited_at <= rejected_at):
+            raise HTTPException(
+                status_code=400,
+                detail="Please add or update at least one activity before resubmitting.",
+            )
+
     form.status = FormStatus.SUBMITTED
     form.submitted_at = datetime.utcnow()
     db.commit()

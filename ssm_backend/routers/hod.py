@@ -43,7 +43,7 @@ def hod_dashboard(
     student_ids = [s.id for s in dept_students]
 
     pending = db.query(SSMForm).filter(
-        SSMForm.hod_id == current_user.id,
+        SSMForm.student_id.in_(student_ids),
         SSMForm.status == FormStatus.HOD_REVIEW
     ).all()
 
@@ -125,8 +125,8 @@ def approve_form(
     if form.status != FormStatus.HOD_REVIEW:
         raise HTTPException(status_code=400, detail="Form is not pending HOD approval")
 
-    # Fill HOD feedback
-    form.academic.hod_feedback = payload.hod_feedback
+    # Fill HOD feedback — default to mentor's level if HOD leaves blank
+    form.academic.hod_feedback = payload.hod_feedback or form.academic.mentor_feedback
     form.hod_id = current_user.id
     form.hod_remarks = payload.remarks
 
@@ -160,6 +160,7 @@ def approve_form(
     else:
         form.status = FormStatus.REJECTED
         form.rejection_reason = payload.remarks
+        form.rejected_at = datetime.utcnow()
         push_notification(
             db, form.student_id,
             title="Form Rejected by HOD ⚠️",
@@ -181,7 +182,7 @@ def approve_form(
 
 @router.get("/all-students")
 def hod_all_students(
-    limit: int = 200,
+    limit: int = 50,
     offset: int = 0,
     current_user: User = Depends(require_hod),
     db: Session = Depends(get_db),
@@ -189,11 +190,24 @@ def hod_all_students(
     """All students in HOD's department with their latest form status."""
     from models.user import User as UserModel
 
-    dept_students = (
-        db.query(UserModel)
+    
+
+    from sqlalchemy import func
+    from models.user import User as UserModel
+
+    latest = (
+        db.query(SSMForm.student_id, func.max(SSMForm.id).label("max_id"))
+        .group_by(SSMForm.student_id)
+        .subquery()
+    )
+    rows = (
+        db.query(UserModel, SSMForm)
+        .outerjoin(latest, latest.c.student_id == UserModel.id)
+        .outerjoin(SSMForm, SSMForm.id == latest.c.max_id)
         .filter(
             UserModel.department_id == current_user.department_id,
             UserModel.role == "student",
+            UserModel.deleted_at.is_(None),
         )
         .offset(offset)
         .limit(limit)
@@ -201,29 +215,22 @@ def hod_all_students(
     )
 
     items = []
-    for student in dept_students:
-        # Get the latest form for this student (if any)
-        latest_form = (
-            db.query(SSMForm)
-            .filter(SSMForm.student_id == student.id)
-            .order_by(SSMForm.id.desc())
-            .first()
-        )
-        sc = latest_form.calculated_score if latest_form else None
+    for student, form in rows:
+        sc = form.calculated_score if form else None
         items.append({
-            "student_id": student.id,
-            "student_name": student.name,
+            "student_id":    student.id,
+            "student_name":  student.name,
             "register_number": student.register_number,
-            "batch": getattr(student, "batch", None),
-            "semester": getattr(student, "semester", None),
-            "form_id": latest_form.id if latest_form else None,
-            "form_status": latest_form.status if latest_form else "not_submitted",
-            "academic_year": latest_form.academic_year if latest_form else None,
-            "grand_total": sc.grand_total if sc else None,
-            "star_rating": sc.star_rating if sc else None,
+            "batch":         student.batch,
+            "semester":      student.semester,
+            "form_id":       form.id if form else None,
+            "form_status":   form.status if form else "not_submitted",
+            "academic_year": form.academic_year if form else None,
+            "grand_total":   sc.grand_total if sc else None,
+            "star_rating":   sc.star_rating if sc else None,
         })
 
-    return {"items": items, "total": len(dept_students)}
+    return {"items": items, "total": len(items)}
 
 
 # ─── APPROVED FORMS ───────────────────────────────────────────────────────────

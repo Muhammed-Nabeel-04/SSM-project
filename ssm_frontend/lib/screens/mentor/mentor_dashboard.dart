@@ -36,62 +36,33 @@ class _MentorDashboardState extends State<MentorDashboard>
   Future<void> _load() async {
     setState(() => _loading = (_data == null));
     try {
-      // ── Core data: dashboard + students (must succeed) ──────────────────
+      // ── All 4 requests fire simultaneously ──────────────────────────────
       final res = await Future.wait([
         ApiService.getMentorDashboard(),
         ApiService.getMentorAllStudents(),
+        ApiService.getMentorActivities().catchError(
+          (_) => <String, dynamic>{'items': []},
+        ),
+        ApiService.getMentorHodPending().catchError(
+          (_) => <String, dynamic>{'items': []},
+        ),
       ]);
       setState(() {
         _data = res[0] as Map<String, dynamic>;
-        final studentsData = res[1] as Map<String, dynamic>;
-        _allStudents = (studentsData['items'] as List?) ?? [];
+        _allStudents =
+            ((res[1] as Map<String, dynamic>)['items'] as List?) ?? [];
+        _activities =
+            ((res[2] as Map<String, dynamic>)['items'] as List?) ?? [];
+        _hodPending =
+            ((res[3] as Map<String, dynamic>)['items'] as List?) ?? [];
         _loading = false;
       });
     } catch (e) {
-      print('❌ Dashboard/Students Error: $e');
       setState(() => _loading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load dashboard: $e')),
-        );
-      }
-    }
-
-    // ── Activities: fetched separately so failure won't break above ────────
-    try {
-      print('🔄 Fetching activities...');
-      final activitiesData = await ApiService.getMentorActivities();
-      print('✅ Activities response: $activitiesData');
-      setState(() {
-        _activities = (activitiesData['items'] as List?) ?? [];
-      });
-      print('✅ Activities loaded: ${_activities?.length ?? 0}');
-    } catch (e) {
-      print('❌ Activities Error: $e');
-      setState(() => _activities = []);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load activities: $e')),
-        );
-      }
-    }
-
-    // ── HOD Pending: fetched separately ────────────────────────────────────
-    try {
-      print('🔄 Fetching HOD pending...');
-      final hodData = await ApiService.getMentorHodPending();
-      print('✅ HOD pending response: $hodData');
-      setState(() {
-        _hodPending = (hodData['items'] as List?) ?? [];
-      });
-      print('✅ HOD pending loaded: ${_hodPending?.length ?? 0}');
-    } catch (e) {
-      print('❌ HOD Pending Error: $e');
-      setState(() => _hodPending = []);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load HOD pending: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load dashboard: $e')));
       }
     }
   }
@@ -124,12 +95,19 @@ class _MentorDashboardState extends State<MentorDashboard>
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Mentor Dashboard',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          Text(_data?['mentor'] ?? '',
-              style: const TextStyle(fontSize: 12, color: Colors.white70)),
-        ]),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mentor Dashboard',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              _data?['mentor'] ?? '',
+              style: const TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+          ],
+        ),
         actions: [
           const NotificationBell(),
           IconButton(
@@ -148,12 +126,15 @@ class _MentorDashboardState extends State<MentorDashboard>
                   content: const Text('Are you sure you want to logout?'),
                   actions: [
                     TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel')),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Logout',
-                          style: TextStyle(color: Colors.red)),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ],
                 ),
@@ -193,9 +174,12 @@ class _MentorDashboardState extends State<MentorDashboard>
                             child: SizedBox(
                               height: 300,
                               child: Center(
-                                child: Text('No pending reviews 🎉',
-                                    style: TextStyle(
-                                        color: AppColors.textSecondary)),
+                                child: Text(
+                                  'No pending reviews 🎉',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ),
                             ),
                           )
@@ -208,61 +192,81 @@ class _MentorDashboardState extends State<MentorDashboard>
                           ),
 
                     // ── Students Tab ─────────────────────────────────
-                    Column(children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Row(children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search name or reg no...',
-                                prefixIcon:
-                                    const Icon(Icons.search_rounded, size: 20),
-                                isDense: true,
-                                contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10)),
+                    Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    hintText: 'Search name or reg no...',
+                                    prefixIcon: const Icon(
+                                      Icons.search_rounded,
+                                      size: 20,
+                                    ),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  onChanged: (v) => setState(
+                                    () => _searchQuery = v.toLowerCase(),
+                                  ),
+                                ),
                               ),
-                              onChanged: (v) => setState(
-                                  () => _searchQuery = v.toLowerCase()),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.sort_rounded),
-                            tooltip: 'Sort',
-                            onSelected: (v) => setState(() => _sortBy = v),
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(
-                                  value: 'name', child: Text('Sort by Name')),
-                              PopupMenuItem(
-                                  value: 'score', child: Text('Sort by Score')),
-                              PopupMenuItem(
-                                  value: 'pending',
-                                  child: Text('Sort by Pending')),
+                              const SizedBox(width: 8),
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.sort_rounded),
+                                tooltip: 'Sort',
+                                onSelected: (v) => setState(() => _sortBy = v),
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(
+                                    value: 'name',
+                                    child: Text('Sort by Name'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'score',
+                                    child: Text('Sort by Score'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'pending',
+                                    child: Text('Sort by Pending'),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                        ]),
-                      ),
-                      Expanded(
-                        child: Builder(builder: (_) {
-                          final students = _filteredStudents();
-                          if (students.isEmpty) {
-                            return const Center(
-                                child: Text('No students found',
+                        ),
+                        Expanded(
+                          child: Builder(
+                            builder: (_) {
+                              final students = _filteredStudents();
+                              if (students.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    'No students found',
                                     style: TextStyle(
-                                        color: AppColors.textSecondary)));
-                          }
-                          return ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: students.length,
-                            itemBuilder: (_, i) =>
-                                _StudentCard(student: students[i]),
-                          );
-                        }),
-                      ),
-                    ]),
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: students.length,
+                                itemBuilder: (_, i) =>
+                                    _StudentCard(student: students[i]),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
 
                     // ── Activities Tab ───────────────────────────────
                     _activities == null
@@ -276,24 +280,27 @@ class _MentorDashboardState extends State<MentorDashboard>
                     _hodPending == null
                         ? const Center(child: CircularProgressIndicator())
                         : _hodPending!.isEmpty
-                            ? const SingleChildScrollView(
-                                physics: AlwaysScrollableScrollPhysics(),
-                                child: SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                    child: Text('No forms with HOD',
-                                        style: TextStyle(
-                                            color: AppColors.textSecondary)),
+                        ? const SingleChildScrollView(
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Text(
+                                  'No forms with HOD',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
-                              )
-                            : ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(16),
-                                itemCount: _hodPending!.length,
-                                itemBuilder: (_, i) =>
-                                    _HodPendingCard(form: _hodPending![i]),
                               ),
+                            ),
+                          )
+                        : ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _hodPending!.length,
+                            itemBuilder: (_, i) =>
+                                _HodPendingCard(form: _hodPending![i]),
+                          ),
                   ],
                 ),
               ),
@@ -327,8 +334,8 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
   int _count(String status) => status == 'all'
       ? widget.activities.length
       : widget.activities
-          .where((a) => (a['status'] ?? '').toLowerCase() == status)
-          .length;
+            .where((a) => (a['status'] ?? '').toLowerCase() == status)
+            .length;
 
   @override
   Widget build(BuildContext context) {
@@ -380,8 +387,11 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
         Expanded(
           child: filtered.isEmpty
               ? const Center(
-                  child: Text('No activities found',
-                      style: TextStyle(color: AppColors.textSecondary)))
+                  child: Text(
+                    'No activities found',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
@@ -428,11 +438,14 @@ class _Chip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label,
-                style: TextStyle(
-                    color: selected ? Colors.white : c,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13)),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : c,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -442,11 +455,14 @@ class _Chip extends StatelessWidget {
                     : c.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('$count',
-                  style: TextStyle(
-                      color: selected ? Colors.white : c,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11)),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: selected ? Colors.white : c,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
             ),
           ],
         ),
@@ -464,7 +480,10 @@ class _ActivityCard extends StatelessWidget {
   const _ActivityCard({required this.activity, required this.onRefresh});
 
   Future<void> _handleAction(
-      BuildContext context, String action, int activityId) async {
+    BuildContext context,
+    String action,
+    int activityId,
+  ) async {
     if (action == 'view') {
       context.push('/mentor/activity/$activityId');
       return;
@@ -478,12 +497,16 @@ class _ActivityCard extends StatelessWidget {
           content: const Text('Approve this activity?'),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
             TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Approve',
-                    style: TextStyle(color: AppColors.accepted))),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Approve',
+                style: TextStyle(color: AppColors.accepted),
+              ),
+            ),
           ],
         ),
       );
@@ -491,14 +514,16 @@ class _ActivityCard extends StatelessWidget {
         try {
           await ApiService.approveActivity(activityId, note: null);
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Activity approved')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Activity approved')));
             await onRefresh();
           }
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Failed: $e')));
           }
         }
       }
@@ -521,12 +546,16 @@ class _ActivityCard extends StatelessWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             TextButton(
-                onPressed: () => Navigator.pop(context, controller.text),
-                child: const Text('Reject',
-                    style: TextStyle(color: AppColors.rejected))),
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text(
+                'Reject',
+                style: TextStyle(color: AppColors.rejected),
+              ),
+            ),
           ],
         ),
       );
@@ -534,14 +563,16 @@ class _ActivityCard extends StatelessWidget {
         try {
           await ApiService.rejectActivity(activityId, reason);
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Activity rejected')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Activity rejected')));
             await onRefresh();
           }
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Failed: $e')));
           }
         }
       }
@@ -561,38 +592,61 @@ class _ActivityCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header ──────────────────────────────────────────────────────
-            Row(children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(activity['activity_name'] ?? 'Unnamed Activity',
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activity['activity_name'] ?? 'Unnamed Activity',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    const SizedBox(height: 4),
-                    Text(activity['student_name'] ?? '',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        activity['student_name'] ?? '',
                         style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
-                    Text(activity['register_number'] ?? '',
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        activity['register_number'] ?? '',
                         style: const TextStyle(
-                            color: AppColors.textLight, fontSize: 12)),
-                  ],
+                          color: AppColors.textLight,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              StatusBadge(status),
-            ]),
+                StatusBadge(status),
+              ],
+            ),
 
             // ── Date ────────────────────────────────────────────────────────
             if (activity['submitted_date'] != null) ...[
               const SizedBox(height: 8),
-              Row(children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 14, color: AppColors.textLight),
-                const SizedBox(width: 4),
-                Text(activity['submitted_date'],
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14,
+                    color: AppColors.textLight,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    activity['submitted_date'],
                     style: const TextStyle(
-                        fontSize: 12, color: AppColors.textLight)),
-              ]),
+                      fontSize: 12,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ],
+              ),
             ],
 
             // ── Rejection reason ─────────────────────────────────────────────
@@ -604,19 +658,27 @@ class _ActivityCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.rejected.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: AppColors.rejected.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppColors.rejected.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline_rounded,
-                        size: 16, color: AppColors.rejected),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: AppColors.rejected,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(activity['rejection_reason'],
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.rejected)),
+                      child: Text(
+                        activity['rejection_reason'],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.rejected,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -626,37 +688,41 @@ class _ActivityCard extends StatelessWidget {
             // ── Action buttons ───────────────────────────────────────────────
             const SizedBox(height: 12),
             if (status == 'pending')
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _handleAction(context, 'reject', activityId),
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Reject'),
-                    style: OutlinedButton.styleFrom(
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          _handleAction(context, 'reject', activityId),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.rejected,
-                        side: const BorderSide(color: AppColors.rejected)),
+                        side: const BorderSide(color: AppColors.rejected),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _handleAction(context, 'approve', activityId),
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Approve'),
-                    style: ElevatedButton.styleFrom(
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          _handleAction(context, 'approve', activityId),
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      label: const Text('Approve'),
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accepted,
-                        foregroundColor: Colors.white),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _handleAction(context, 'view', activityId),
-                  icon: const Icon(Icons.visibility_rounded),
-                  tooltip: 'View',
-                ),
-              ])
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _handleAction(context, 'view', activityId),
+                    icon: const Icon(Icons.visibility_rounded),
+                    tooltip: 'View',
+                  ),
+                ],
+              )
             else
               SizedBox(
                 width: double.infinity,
@@ -669,9 +735,10 @@ class _ActivityCard extends StatelessWidget {
                         ? AppColors.accepted
                         : AppColors.rejected,
                     side: BorderSide(
-                        color: status == 'accepted'
-                            ? AppColors.accepted
-                            : AppColors.rejected),
+                      color: status == 'accepted'
+                          ? AppColors.accepted
+                          : AppColors.rejected,
+                    ),
                   ),
                 ),
               ),
@@ -697,40 +764,57 @@ class _PendingCard extends StatelessWidget {
         onTap: () => context.push('/mentor/review/${form['form_id']}'),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(children: [
-            const CircleAvatar(
-              backgroundColor: AppColors.mentorColor,
-              child: Icon(Icons.person_rounded, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+          child: Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.mentorColor,
+                child: Icon(Icons.person_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(form['student_name'] ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                    Text(form['register_number'] ?? '',
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
-                    Text('AY ${form['academic_year']}',
-                        style: const TextStyle(
-                            color: AppColors.textLight, fontSize: 11)),
-                  ]),
-            ),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              StatusBadge(form['status']),
-              if (form['preview_score'] != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '${(form['preview_score'] as num).toStringAsFixed(0)} pts',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                      fontSize: 13),
+                    Text(
+                      form['student_name'] ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      form['register_number'] ?? '',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      'AY ${form['academic_year']}',
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ]),
-          ]),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusBadge(form['status']),
+                  if (form['preview_score'] != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${(form['preview_score'] as num).toStringAsFixed(0)} pts',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -752,10 +836,14 @@ class _StudentCard extends StatelessWidget {
           backgroundColor: AppColors.primary,
           child: Icon(Icons.person_rounded, color: Colors.white, size: 20),
         ),
-        title: Text(student['student_name'] ?? '',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        subtitle: Text(student['register_number'] ?? '',
-            style: const TextStyle(fontSize: 12)),
+        title: Text(
+          student['student_name'] ?? '',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        subtitle: Text(
+          student['register_number'] ?? '',
+          style: const TextStyle(fontSize: 12),
+        ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -764,9 +852,10 @@ class _StudentCard extends StatelessWidget {
               Text(
                 '${(student['grand_total'] as num).toStringAsFixed(0)} pts',
                 style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: AppColors.primary),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: AppColors.primary,
+                ),
               ),
               StarRating(stars: student['star_rating'] ?? 0, size: 13),
             ] else
@@ -779,14 +868,16 @@ class _StudentCard extends StatelessWidget {
                   color: AppColors.mentorReview.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: AppColors.mentorReview.withOpacity(0.3)),
+                    color: AppColors.mentorReview.withOpacity(0.3),
+                  ),
                 ),
                 child: Text(
                   '${student['pending_activities']}/${student['total_activities']} pending',
                   style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.mentorReview,
-                      fontWeight: FontWeight.w600),
+                    fontSize: 10,
+                    color: AppColors.mentorReview,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
@@ -818,55 +909,77 @@ class _HodPendingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                const CircleAvatar(
-                  backgroundColor: AppColors.hodColor,
-                  child: Icon(Icons.person_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+              Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: AppColors.hodColor,
+                    child: Icon(Icons.person_rounded, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(form['student_name'] ?? '',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w700)),
-                        Text(form['register_number'] ?? '',
-                            style: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 12)),
-                        Text('AY ${form['academic_year']}',
-                            style: const TextStyle(
-                                color: AppColors.textLight, fontSize: 11)),
-                      ]),
-                ),
-                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  if (form['grand_total'] != null) ...[
-                    Text(
-                      '${(form['grand_total'] as num).toStringAsFixed(0)} pts',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: AppColors.primary),
+                        Text(
+                          form['student_name'] ?? '',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          form['register_number'] ?? '',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          'AY ${form['academic_year']}',
+                          style: const TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
-                    if (form['star_rating'] != null)
-                      StarRating(stars: form['star_rating'], size: 13),
-                  ],
-                ]),
-              ]),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (form['grand_total'] != null) ...[
+                        Text(
+                          '${(form['grand_total'] as num).toStringAsFixed(0)} pts',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        if (form['star_rating'] != null)
+                          StarRating(stars: form['star_rating'], size: 13),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
               if (form['submitted_at'] != null) ...[
                 const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.send_rounded,
-                      size: 14, color: AppColors.hodColor),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Sent to HOD on ${form['submitted_at']}',
-                    style: const TextStyle(
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.send_rounded,
+                      size: 14,
+                      color: AppColors.hodColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Sent to HOD on ${form['submitted_at']}',
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.hodColor,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ]),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ],
               if (form['mentor_remarks'] != null &&
                   form['mentor_remarks'].toString().isNotEmpty) ...[
@@ -876,20 +989,26 @@ class _HodPendingCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.comment_rounded,
-                          size: 14, color: AppColors.primary),
+                      const Icon(
+                        Icons.comment_rounded,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           form['mentor_remarks'],
                           style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

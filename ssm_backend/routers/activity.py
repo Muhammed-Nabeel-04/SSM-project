@@ -346,6 +346,22 @@ async def submit_activity(
         if ext not in {".pdf", ".jpg", ".jpeg", ".png"}:
             raise HTTPException(status_code=400, detail="Only PDF, JPG, PNG allowed.")
 
+        _magic_map = {
+            b"%PDF":       ".pdf",
+            b"\xff\xd8\xff": ".jpg",
+            b"\x89PNG":    ".png",
+        }
+        actual_ext = None
+        for magic, mapped in _magic_map.items():
+            if contents[:len(magic)] == magic:
+                actual_ext = mapped
+                break
+        if actual_ext is None:
+            raise HTTPException(status_code=400, detail="File content is not a valid PDF, JPG, or PNG.")
+        declared = ".jpg" if ext == ".jpeg" else ext
+        if actual_ext != declared:
+            raise HTTPException(status_code=400, detail=f"File extension '{ext}' does not match actual content '{actual_ext}'.")
+
         unique_name = f"activities/{current_user.id}/{form.id}/{uuid.uuid4().hex}{ext}"
 
         from services.storage import storage_service
@@ -425,6 +441,7 @@ async def submit_activity(
         submitted_at      = datetime.utcnow(),
     )
     db.add(activity)
+    form.last_student_edit_at = datetime.utcnow()
     db.commit()
     db.refresh(activity)
 

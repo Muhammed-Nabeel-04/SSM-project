@@ -190,7 +190,7 @@ def assign_mentor(
     student.mentor_id = mentor_id
     db.query(SSMForm).filter(
         SSMForm.student_id == user_id,
-        SSMForm.status.in_([FormStatus.DRAFT, FormStatus.SUBMITTED])
+        SSMForm.status.notin_([FormStatus.APPROVED, FormStatus.REJECTED])
     ).update({"mentor_id": mentor_id})
     db.commit()
     return {"message": f"Mentor {mentor.name} assigned to {student.name}"}

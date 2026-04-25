@@ -375,7 +375,7 @@ def submit_review(
         from models.user import User as UserModel, UserRole
         hod = db.query(UserModel).filter(
             UserModel.department_id == form.student.department_id,
-            UserModel.role == UserRole.HOD,
+            UserModel.role == "hod",
             UserModel.is_active == True,
         ).first()
         if hod:
@@ -411,6 +411,7 @@ def reject_form(
 
     form.status           = FormStatus.REJECTED
     form.rejection_reason = reason
+    form.rejected_at      = datetime.utcnow()
     push_notification(
         db, form.student_id,
         title="Form Returned by Mentor ⚠️",

@@ -132,8 +132,9 @@ class _HodDashboardState extends State<HodDashboard>
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('HOD Dashboard',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          Text(_data?['hod'] ?? '',
-              style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          if (_data?['hod'] != null)
+            Text(_data!['hod'],
+                style: const TextStyle(fontSize: 12, color: Colors.white70)),
         ]),
         actions: [
           const NotificationBell(),

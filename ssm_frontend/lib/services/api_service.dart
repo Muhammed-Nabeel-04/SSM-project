@@ -157,7 +157,11 @@ class ApiService {
           body: json.encode({'old_password': oldPwd, 'new_password': newPwd}),
         )
         .timeout(_timeout, onTimeout: () => throw _timeoutError());
-    return _handle(res);
+    final result = _handle(res);
+    // All server sessions are invalidated — clear local token so next
+    // API call doesn't hit a 401 mid-session.
+    await TokenService.clearSession();
+    return result;
   }
 
   static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
@@ -435,7 +439,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getHodAllStudents({
-    int limit = 200,
+    int limit = 200, // keep 200 on frontend — fetches all for now
     int offset = 0,
   }) async {
     final res = await http

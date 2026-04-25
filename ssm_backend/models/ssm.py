@@ -146,6 +146,8 @@ class SSMForm(Base):
     rejection_reason = Column(Text, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     approved_at = Column(DateTime, nullable=True)
+    last_student_edit_at = Column(DateTime, nullable=True)
+    rejected_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

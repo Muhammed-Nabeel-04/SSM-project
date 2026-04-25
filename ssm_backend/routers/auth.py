@@ -17,6 +17,27 @@ from services.security import (
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def _encrypt_totp(secret: str) -> str:
+    import os
+    from cryptography.fernet import Fernet
+    key = os.environ.get("TOTP_ENCRYPTION_KEY", "").encode()
+    if not key:
+        return secret
+    return Fernet(key).encrypt(secret.encode()).decode()
+
+
+def _decrypt_totp(encrypted: str) -> str:
+    import os
+    from cryptography.fernet import Fernet
+    key = os.environ.get("TOTP_ENCRYPTION_KEY", "").encode()
+    if not key:
+        return encrypted
+    try:
+        return Fernet(key).decrypt(encrypted.encode()).decode()
+    except Exception:
+        return encrypted  # fallback for existing plaintext rows
+
+
 # ─── LOGIN ────────────────────────────────────────────────────────────────────
 
 from slowapi import Limiter
@@ -165,6 +186,11 @@ def change_password(
 
     current_user.password_hash        = hash_password(payload.new_password)
     current_user.must_change_password = False
+    from models.user import UserSession
+    db.query(UserSession).filter(
+        UserSession.user_id == current_user.id,
+        UserSession.is_active == True,
+    ).update({"is_active": False})
     db.commit()
     return {"message": "Password changed successfully"}
 
@@ -221,7 +247,7 @@ def setup_2fa(
         issuer_name="SSM System",
     )
     # Temporarily store the secret (not yet active until they verify one code)
-    current_user.totp_secret = secret
+    current_user.totp_secret = _encrypt_totp(secret)
     db.commit()
     return {"provisioning_uri": uri, "secret": secret}
 
@@ -239,7 +265,7 @@ def enable_2fa(
     if not current_user.totp_secret:
         raise HTTPException(status_code=400, detail="Run /auth/2fa/setup first.")
 
-    totp = pyotp.TOTP(current_user.totp_secret)
+    totp = pyotp.TOTP(_decrypt_totp(current_user.totp_secret))
     if not totp.verify(code, valid_window=1):
         raise HTTPException(status_code=400, detail="Invalid or expired code. Try again.")
 
@@ -259,7 +285,7 @@ def disable_2fa(
     if not current_user.is_2fa_enabled or not current_user.totp_secret:
         raise HTTPException(status_code=400, detail="2FA is not currently enabled.")
 
-    totp = pyotp.TOTP(current_user.totp_secret)
+    totp = pyotp.TOTP(_decrypt_totp(current_user.totp_secret))
     if not totp.verify(code, valid_window=1):
         raise HTTPException(status_code=400, detail="Invalid or expired code.")
 
@@ -289,7 +315,7 @@ def login_with_2fa(
     if not user or not user.is_2fa_enabled or not user.totp_secret:
         raise HTTPException(status_code=400, detail="Invalid 2FA request.")
 
-    totp = pyotp.TOTP(user.totp_secret)
+    totp = pyotp.TOTP(_decrypt_totp(user.totp_secret))
     if not totp.verify(code, valid_window=1):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired 2FA code.")
 
