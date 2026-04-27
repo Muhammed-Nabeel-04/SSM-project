@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,26 +12,31 @@ import 'services/notification_service.dart';
 import 'core/app_config.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.init();
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await AppConfig.init();
 
-  const sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
-  const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'development');
-  const appVersion = '1.0.0+1';
+    const sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+    const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'development');
+    const appVersion = '1.0.0+1';
 
-  if (sentryDsn.isNotEmpty) {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = sentryDsn;
-        options.environment = appEnv;
-        options.release = 'ssm-frontend@$appVersion';
-        options.tracesSampleRate = 0.1;
-        options.sendDefaultPii = false;
-      },
-      appRunner: () => runApp(const SSMApp()),
-    );  } else {
-    runApp(const SSMApp());
-  }
+    if (sentryDsn.isNotEmpty) {
+      await SentryFlutter.init(
+        (options) {
+          options.dsn = sentryDsn;
+          options.environment = appEnv;
+          options.release = 'ssm-frontend@$appVersion';
+          options.tracesSampleRate = 0.1;
+          options.sendDefaultPii = false;
+        },
+        appRunner: () => runApp(const SSMApp()),
+      );
+    } else {
+      runApp(const SSMApp());
+    }
+  }, (error, stack) async {
+    await Sentry.captureException(error, stackTrace: stack);
+  });
 }
 
 class SSMApp extends StatelessWidget {

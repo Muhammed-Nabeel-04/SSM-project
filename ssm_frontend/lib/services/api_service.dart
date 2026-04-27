@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:async';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'token_service.dart';
 import '../core/app_config.dart';
@@ -49,15 +50,25 @@ class ApiService {
     try {
       body = json.decode(res.body);
     } on FormatException {
-      throw ApiException(500,
+      final err = ApiException(500,
           'Server error: Invalid response format. Please try again later.');
+      Sentry.captureException(err, stackTrace: StackTrace.current);
+      throw err;
     }
     if (res.statusCode >= 200 && res.statusCode < 300) return body;
     if (res.statusCode == 401) {
       throw ApiException(401, 'Invalid credentials or session expired.');
     }
+    
     final msg = body['detail'] ?? 'Request failed';
-    throw ApiException(res.statusCode, msg is String ? msg : msg.toString());
+    final err = ApiException(res.statusCode, msg is String ? msg : msg.toString());
+
+    // Report 5xx errors to Sentry
+    if (res.statusCode >= 500) {
+      Sentry.captureException(err, stackTrace: StackTrace.current);
+    }
+    
+    throw err;
   }
 
   static Uri _url(String path, [Map<String, String>? params]) {

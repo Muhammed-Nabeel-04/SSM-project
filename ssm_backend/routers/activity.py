@@ -83,9 +83,18 @@ def _patch_form_data(activity: StudentActivity, db: Session):
     """
     When a mentor approves an activity, patch the underlying SSMForm
     category data so the existing scoring engine can calculate correctly.
+    Now uses re-calculation to avoid double-counting bugs.
     """
     form = activity.form
     atype = activity.activity_type
+
+    def _get_approved(atype_target):
+        return db.query(StudentActivity).filter(
+            StudentActivity.form_id == form.id,
+            StudentActivity.activity_type == atype_target,
+            StudentActivity.mentor_status == MentorStatus.APPROVED,
+            StudentActivity.is_deleted == False
+        ).all()
 
     # ── Academic ──────────────────────────────────────────────────────────────
     if atype == ActivityType.GPA_UPDATE:
@@ -104,106 +113,92 @@ def _patch_form_data(activity: StudentActivity, db: Session):
     # ── Development ───────────────────────────────────────────────────────────
     elif atype == ActivityType.NPTEL:
         tier_order = ["participated", "completed", "elite", "elite_plus"]
-        current = form.development.nptel_tier
-        new_tier = activity.nptel_tier
-        if new_tier and new_tier in tier_order:
-            c_val = current.value if current else ""
-            c_idx = tier_order.index(c_val) if c_val in tier_order else -1
-            n_idx = tier_order.index(new_tier)
-            if n_idx > c_idx:
-                form.development.nptel_tier = new_tier
+        approved = _get_approved(ActivityType.NPTEL)
+        max_idx = -1
+        for a in approved:
+            if a.nptel_tier and a.nptel_tier in tier_order:
+                max_idx = max(max_idx, tier_order.index(a.nptel_tier))
+        form.development.nptel_tier = tier_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.ONLINE_CERT:
-        form.development.online_cert_count = (form.development.online_cert_count or 0) + 1
+        form.development.online_cert_count = len(_get_approved(ActivityType.ONLINE_CERT))
 
     elif atype == ActivityType.INTERNSHIP:
         dur_order = ["participation", "1to2weeks", "2to4weeks", "4weeks_plus"]
-        current = form.development.internship_duration
-        new_dur = activity.internship_duration
-        if new_dur and new_dur in dur_order:
-            c_val = current.value if current else ""
-            c_idx = dur_order.index(c_val) if c_val in dur_order else -1
-            n_idx = dur_order.index(new_dur)
-            if n_idx > c_idx:
-                form.development.internship_duration = new_dur
+        approved = _get_approved(ActivityType.INTERNSHIP)
+        max_idx = -1
+        for a in approved:
+            if a.internship_duration and a.internship_duration in dur_order:
+                max_idx = max(max_idx, dur_order.index(a.internship_duration))
+        form.development.internship_duration = dur_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.COMPETITION:
         res_order = ["participated", "finalist", "winner"]
-        current = form.development.competition_result
-        new_res = activity.competition_result
-        if new_res and new_res in res_order:
-            c_val = current.value if current else ""
-            c_idx = res_order.index(c_val) if c_val in res_order else -1
-            n_idx = res_order.index(new_res)
-            if n_idx > c_idx:
-                form.development.competition_result = new_res
+        approved = _get_approved(ActivityType.COMPETITION)
+        max_idx = -1
+        for a in approved:
+            if a.competition_result and a.competition_result in res_order:
+                max_idx = max(max_idx, res_order.index(a.competition_result))
+        form.development.competition_result = res_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.PUBLICATION:
         pub_order = ["prototype", "conference", "patent"]
-        current = form.development.publication_type
-        new_pub = activity.publication_type
-        if new_pub and new_pub in pub_order:
-            c_val = current.value if current else ""
-            c_idx = pub_order.index(c_val) if c_val in pub_order else -1
-            n_idx = pub_order.index(new_pub)
-            if n_idx > c_idx:
-                form.development.publication_type = new_pub
+        approved = _get_approved(ActivityType.PUBLICATION)
+        max_idx = -1
+        for a in approved:
+            if a.publication_type and a.publication_type in pub_order:
+                max_idx = max(max_idx, pub_order.index(a.publication_type))
+        form.development.publication_type = pub_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.PROF_PROGRAM:
-        form.development.professional_programs_count = (
-            form.development.professional_programs_count or 0
-        ) + 1
+        form.development.professional_programs_count = len(_get_approved(ActivityType.PROF_PROGRAM))
 
     # ── Skill ─────────────────────────────────────────────────────────────────
     elif atype == ActivityType.PLACEMENT:
-        if activity.placement_lpa:
-            if (form.skill.placement_lpa or 0) < activity.placement_lpa:
-                form.skill.placement_lpa = activity.placement_lpa
+        approved = _get_approved(ActivityType.PLACEMENT)
+        if approved:
+            form.skill.placement_lpa = max(a.placement_lpa or 0 for a in approved)
 
     elif atype == ActivityType.HIGHER_STUDY:
-        form.skill.higher_studies = True
+        form.skill.higher_studies = len(_get_approved(ActivityType.HIGHER_STUDY)) > 0
 
     elif atype == ActivityType.INDUSTRY_INT:
-        form.skill.industry_interactions = (form.skill.industry_interactions or 0) + 1
+        form.skill.industry_interactions = len(_get_approved(ActivityType.INDUSTRY_INT))
 
     elif atype == ActivityType.RESEARCH:
-        form.skill.research_papers_count = (form.skill.research_papers_count or 0) + 1
+        form.skill.research_papers_count = len(_get_approved(ActivityType.RESEARCH))
 
     # ── Leadership ────────────────────────────────────────────────────────────
     elif atype == ActivityType.FORMAL_ROLE:
         role_order = ["class_level", "dept_level", "college_level"]
-        current = form.leadership.formal_role
-        new_role = activity.role_level
-        if new_role and new_role in role_order:
-            c_val = current.value if current else ""
-            c_idx = role_order.index(c_val) if c_val in role_order else -1
-            n_idx = role_order.index(new_role)
-            if n_idx > c_idx:
-                form.leadership.formal_role = new_role
+        approved = _get_approved(ActivityType.FORMAL_ROLE)
+        max_idx = -1
+        for a in approved:
+            if a.role_level and a.role_level in role_order:
+                max_idx = max(max_idx, role_order.index(a.role_level))
+        form.leadership.formal_role = role_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.EVENT_ORG:
         ev_order = ["assisted", "led_1", "led_2plus"]
-        current = form.leadership.event_leadership
-        new_ev = activity.event_level
-        # Map event_level → EventLeadership value
+        approved = _get_approved(ActivityType.EVENT_ORG)
         ev_map = {"dept": "led_1", "college": "led_1", "inter_college": "led_2plus", "national": "led_2plus"}
-        mapped = ev_map.get(new_ev, "assisted") if new_ev else None
-        if mapped:
-            c_idx = ev_order.index(current.value) if current else -1
-            n_idx = ev_order.index(mapped) if mapped in ev_order else -1
-            if n_idx > c_idx:
-                form.leadership.event_leadership = mapped
+        max_idx = -1
+        for a in approved:
+            mapped = ev_map.get(a.event_level)
+            if mapped and mapped in ev_order:
+                max_idx = max(max_idx, ev_order.index(mapped))
+        form.leadership.event_leadership = ev_order[max_idx] if max_idx >= 0 else None
 
     elif atype == ActivityType.COMMUNITY:
         comm_order = ["minimal", "active", "led_project"]
-        current = form.leadership.community_leadership
+        approved = _get_approved(ActivityType.COMMUNITY)
         comm_map = {"local": "minimal", "district": "active", "state": "active", "national": "led_project"}
-        mapped = comm_map.get(activity.community_level, "minimal") if activity.community_level else None
-        if mapped:
-            c_idx = comm_order.index(current.value) if current else -1
-            n_idx = comm_order.index(mapped) if mapped in comm_order else -1
-            if n_idx > c_idx:
-                form.leadership.community_leadership = mapped
+        max_idx = -1
+        for a in approved:
+            mapped = comm_map.get(a.community_level)
+            if mapped and mapped in comm_order:
+                max_idx = max(max_idx, comm_order.index(mapped))
+        form.leadership.community_leadership = comm_order[max_idx] if max_idx >= 0 else None
 
     db.commit()
 
@@ -265,6 +260,26 @@ async def submit_activity(
             status_code=400,
             detail="Cannot add activities to a form that is already submitted or approved."
         )
+
+    # ── Resubmit Guard: Check if student is uploading the exact same file ──────
+    if file and file.filename:
+        # Check by filename and size for current user
+        contents = await file.read()
+        size_kb = len(contents) // 1024
+        await file.seek(0) # reset for later read
+
+        existing_file = db.query(StudentActivity).filter(
+            StudentActivity.student_id == current_user.id,
+            StudentActivity.original_filename == file.filename,
+            StudentActivity.file_size_kb == size_kb,
+            StudentActivity.is_deleted == False
+        ).first()
+        
+        if existing_file:
+            raise HTTPException(
+                status_code=400,
+                detail=f"You have already uploaded a file named '{file.filename}' with the same size. Please check your activities list."
+            )
 
     # ── File handling ─────────────────────────────────────────────────────────
     file_path_saved   = None

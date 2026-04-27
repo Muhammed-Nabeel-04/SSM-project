@@ -5,12 +5,19 @@ from config import settings
 engine = create_engine(
     settings.db_url,
     # Pool Configuration
-    pool_size=10,       
-    max_overflow=10,     
+    pool_size=5,         # Reduced for Railway stability
+    max_overflow=5,      
     pool_timeout=30,     
     pool_pre_ping=True, 
     pool_recycle=300,    
-    connect_args={"sslmode": "require"}, 
+    connect_args={
+        "sslmode": "require",
+        "connect_timeout": 10,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }, 
     echo=settings.APP_ENV == "development",
 )
 

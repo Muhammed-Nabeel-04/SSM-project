@@ -66,11 +66,11 @@ class StudentActivity(Base):
     __tablename__ = "student_activities"
 
     id          = Column(Integer, primary_key=True, index=True)
-    form_id     = Column(Integer, ForeignKey("ssm_forms.id",  ondelete="CASCADE"), nullable=False)
-    student_id  = Column(Integer, ForeignKey("users.id",      ondelete="CASCADE"), nullable=False)
+    form_id     = Column(Integer, ForeignKey("ssm_forms.id",  ondelete="CASCADE"), index=True, nullable=False)
+    student_id  = Column(Integer, ForeignKey("users.id",      ondelete="CASCADE"), index=True, nullable=False)
 
-    category = Column(SAEnum(ActivityCategory, native_enum=False), nullable=False)
-    activity_type = Column(SAEnum(ActivityType, native_enum=False), nullable=False)
+    category = Column(SAEnum(ActivityCategory, native_enum=False), index=True, nullable=False)
+    activity_type = Column(SAEnum(ActivityType, native_enum=False), index=True, nullable=False)
 
     # Activity-specific fields stored as individual nullable columns
     # (avoids JSON parsing complexity; each activity uses a subset)

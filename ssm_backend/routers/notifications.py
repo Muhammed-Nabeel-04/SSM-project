@@ -29,13 +29,18 @@ async def websocket_endpoint(websocket: WebSocket):
         auth_msg = await websocket.receive_json()
         token = auth_msg.get("token")
         
-        db = next(get_db())
-        user = get_user_from_token(token, db)
+        from database import SessionLocal
+        db = SessionLocal()
+        try:
+            user = get_user_from_token(token, db)
+            user_id = user.id
+        finally:
+            db.close()
     except Exception:
         await websocket.close(code=1008) # Policy Violation
         return
 
-    await manager.connect(websocket, user.id)
+    await manager.connect(websocket, user_id)
     
     # Subscribe to user's notification channel in Redis
     redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
