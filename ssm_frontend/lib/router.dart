@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'services/token_service.dart';
@@ -57,6 +58,7 @@ GoRouter buildRouter(AuthProvider authProvider) {
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refreshNotifier,
+    observers: [SentryNavigatorObserver()],
     redirect: (context, state) {
       final auth = authProvider;
       final isSplash = state.matchedLocation == '/splash';

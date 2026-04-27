@@ -7,18 +7,34 @@ from slowapi.middleware import SlowAPIMiddleware
 import os
 import sys
 import logging
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 # Fix Railway import issues
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
-from database import engine
-from routers import auth, student, mentor, hod, admin
-from routers.files import router as files_router
-from routers.activity import router as activity_router
-from routers.settings import router as academic_router
-from routers.notifications import router as notifications_router
-import models.notification  # Ensure table registration
+
+# ─── SENTRY ──────────────────────────────────────────────────────
+
+def sentry_filter(event, hint):
+    if 'exc_info' in hint:
+        exc_type, exc_value, tb = hint['exc_info']
+        # Ignore 4xx errors or specific validation errors if needed
+        # (FastAPI handles many automatically)
+        pass
+    return event
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.APP_ENV,
+        release=f"ssm-backend@{settings.APP_VERSION}",
+        traces_sample_rate=0.1,
+        integrations=[FastApiIntegration()],
+        send_default_pii=False,
+        before_send=sentry_filter,
+    )
 
 # ─── LOGGING ─────────────────────────────────────────────────────
 

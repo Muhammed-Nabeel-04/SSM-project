@@ -514,7 +514,9 @@ class _ActivityCard extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Activity approved')));
-            await onRefresh();
+            if (context.mounted) {
+              await onRefresh();
+            }
           }
         } catch (e) {
           if (context.mounted) {
@@ -524,9 +526,8 @@ class _ActivityCard extends StatelessWidget {
           }
         }
       }
-    }
-
-    if (action == 'reject') {
+    } else if (action == 'reject') {
+      if (!context.mounted) return;
       final controller = TextEditingController();
       final reason = await showDialog<String>(
         context: context,
@@ -563,7 +564,9 @@ class _ActivityCard extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Activity rejected')));
-            await onRefresh();
+            if (context.mounted) {
+              await onRefresh();
+            }
           }
         } catch (e) {
           if (context.mounted) {

@@ -38,6 +38,8 @@ from services.security import get_current_user, require_mentor, require_student
 from services.scoring import calculate_and_save
 from services.notifications import push_notification
 from services.storage import storage_service
+from services.ocr import _run_ocr_verify
+from worker import process_ocr_task, recalculate_scores_task, send_notification_task
 
 router = APIRouter(prefix="/activity", tags=["Activities"])
 
@@ -75,68 +77,6 @@ def _get_or_create_form(student: User, db: Session) -> SSMForm:
         db.refresh(form)
 
     return form
-
-
-def _run_ocr_verify(contents: bytes, ext: str, student_name: str):
-    """Returns (ocr_text, ocr_status, ocr_note)."""
-    import re
-
-    ocr_text = None
-
-    if ext in {".jpg", ".jpeg", ".png"}:
-        try:
-            import pytesseract
-            from PIL import Image
-            img = Image.open(io.BytesIO(contents))
-            ocr_text = pytesseract.image_to_string(img)[:2000]
-        except Exception:
-            return None, OCRStatus.REVIEW, "Image OCR unavailable — mentor will verify."
-
-    elif ext == ".pdf":
-        try:
-            import pdfplumber
-            pages = []
-            with pdfplumber.open(io.BytesIO(contents)) as pdf:
-                for page in pdf.pages[:4]:
-                    t = page.extract_text()
-                    if t:
-                        pages.append(t.strip())
-            ocr_text = "\n".join(pages)[:2000]
-            if not ocr_text.strip():
-                return None, OCRStatus.REVIEW, "Scanned PDF — mentor will verify."
-        except Exception:
-            return None, OCRStatus.REVIEW, "PDF read error — mentor will verify."
-
-    if not ocr_text:
-        return None, OCRStatus.REVIEW, "Could not extract text — mentor will verify."
-
-    # ── Rule checks ───────────────────────────────────────────────────────────
-    text_lower = ocr_text.lower()
-
-    name_parts = [p for p in student_name.lower().split() if len(p) > 2]
-    name_match = any(part in text_lower for part in name_parts)
-
-    has_date = bool(re.search(r'\b(202[0-7])\b', ocr_text))
-
-    platforms = [
-        "coursera", "udemy", "nptel", "swayam", "linkedin", "google",
-        "aws", "microsoft", "infosys", "tcs", "nasscom", "cisco",
-        "oracle", "ibm", "red hat", "internshala", "simplilearn",
-        "edx", "udacity", "pluralsight",
-    ]
-    known_platform = any(p in text_lower for p in platforms)
-
-    checks = {"name_match": name_match, "has_date": has_date, "known_platform": known_platform}
-    passed = sum(checks.values())
-
-    if not name_match:
-        # Hard fail — name must match
-        return ocr_text, OCRStatus.FAILED, f"Student name not found in document. Please re-upload a clearer scan. Checks: {checks}"
-
-    if passed == 3:
-        return ocr_text, OCRStatus.VALID, "All checks passed."
-    else:
-        return ocr_text, OCRStatus.REVIEW, f"Partial checks — mentor will verify. {checks}"
 
 
 def _patch_form_data(activity: StudentActivity, db: Session):
@@ -375,16 +315,68 @@ async def submit_activity(
         file_size_kb      = size_kb
         original_filename = file.filename
 
-        # ── Run OCR ───────────────────────────────────────────────────────────
-        ocr_text, ocr_status_val, ocr_note = _run_ocr_verify(contents, ext, current_user.name)
+        # Save activity FIRST so we have an ID for the worker
+        activity = StudentActivity(
+            form_id      = form.id,
+            student_id   = current_user.id,
+            category     = category,
+            activity_type= activity_type,
 
-        # If OCR fully passes → it still goes to mentor for final verification
-        if ocr_status_val == OCRStatus.VALID:
-            mentor_status_val = MentorStatus.PENDING
-        elif ocr_status_val == OCRStatus.FAILED:
-            mentor_status_val = MentorStatus.PENDING  # student must re-upload first
-        else:
-            mentor_status_val = MentorStatus.PENDING
+            internal_gpa   = internal_gpa,
+            university_gpa = university_gpa,
+            attendance_pct = attendance_pct,
+            has_arrear     = has_arrear,
+            project_status = project_status,
+
+            nptel_tier           = nptel_tier,
+            platform_name        = platform_name,
+            course_name          = course_name,
+            internship_company   = internship_company,
+            internship_duration  = internship_duration,
+            competition_name     = competition_name,
+            competition_result   = competition_result,
+            publication_title    = publication_title,
+            publication_type     = publication_type,
+            program_name         = program_name,
+
+            placement_company    = placement_company,
+            placement_lpa        = placement_lpa,
+            higher_study_exam    = higher_study_exam,
+            higher_study_score   = higher_study_score,
+            industry_org         = industry_org,
+            research_title       = research_title,
+            research_journal     = research_journal,
+
+            role_name        = role_name,
+            role_level       = role_level,
+            event_name       = event_name,
+            event_level      = event_level,
+            community_org    = community_org,
+            community_level  = community_level,
+
+            file_path         = file_path_saved,
+            original_filename = original_filename,
+            file_size_kb      = file_size_kb,
+            ocr_status        = OCRStatus.PENDING,
+            ocr_note          = "Processing in background...",
+            mentor_status     = MentorStatus.PENDING,
+            submitted_at      = datetime.utcnow(),
+        )
+        db.add(activity)
+        form.last_student_edit_at = datetime.utcnow()
+        db.commit()
+        db.refresh(activity)
+
+        # ── Trigger Background OCR ───────────────────────────────────────────
+        process_ocr_task.delay(activity.id, contents, ext, current_user.name)
+
+        return {
+            "activity_id":    activity.id,
+            "ocr_status":     OCRStatus.PENDING,
+            "ocr_note":       "Verification is running in the background.",
+            "mentor_status":  MentorStatus.PENDING,
+            "message":        "Document uploaded! Verification is running in the background.",
+        }
 
     else:
         # No file — e.g. GPA update. Goes to mentor for verification.
@@ -620,24 +612,21 @@ def approve_activity(
     act.verified_at   = datetime.utcnow()
     db.commit()
 
-    # Patch form data and recalculate score
+    # Patch form data
     _patch_form_data(act, db)
-    form = act.form
-    score_row, _ = calculate_and_save(form, db)
-
-    # Notify student
-    push_notification(
-        db, act.student_id,
+    
+    # ── Trigger Background Scoring & Notification ────────────────────────────
+    recalculate_scores_task.delay(act.form_id)
+    
+    send_notification_task.delay(
+        act.student_id,
         title="Activity Approved ✅",
         body=f'Your {act.activity_type.value.replace("_", " ").title()} activity has been approved by your mentor.',
         icon="check",
     )
-    db.commit()
 
     return {
-        "message":     "Activity approved. Score updated.",
-        "grand_total": score_row.grand_total,
-        "star_rating": score_row.star_rating,
+        "message": "Activity approved. Scoring and notification are processing in background.",
     }
 
 

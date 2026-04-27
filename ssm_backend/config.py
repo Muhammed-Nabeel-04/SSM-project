@@ -21,8 +21,15 @@ class Settings(BaseSettings):
     # App
     APP_NAME      : str = "SSM System"
     APP_ENV       : str = "development"
+    APP_VERSION   : str = "1.0.0"
     UPLOAD_DIR    : str = "uploads"
     MAX_FILE_SIZE_MB: int = 5
+
+    # Sentry
+    SENTRY_DSN: str = ""
+
+    # Redis (for Celery)
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # Supabase (for File Storage)
     SUPABASE_URL: str = ""

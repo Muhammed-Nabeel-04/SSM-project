@@ -63,8 +63,8 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     try {
       await ApiService.enable2FA(code);
       // Reload profile so the in-app is_2fa_enabled reflects the change
-      await context.read<AuthProvider>().reloadProfile();
       if (!mounted) return;
+      await context.read<AuthProvider>().reloadProfile();
       setState(() {
         _pageState = _PageState.enabled;
       });
@@ -88,6 +88,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     });
     try {
       await ApiService.disable2FA(code);
+      if (!mounted) return;
       await context.read<AuthProvider>().reloadProfile();
       setState(() {
         _pageState = _PageState.idle;

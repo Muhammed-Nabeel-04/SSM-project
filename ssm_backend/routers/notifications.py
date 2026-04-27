@@ -1,13 +1,64 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json
+import asyncio
+import redis.asyncio as aioredis
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
+from config import settings
 from models.notification import Notification
 from models.user import User
-from services.security import get_current_user
+from services.security import get_current_user, get_user_from_token
+from services.notifications import manager
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+# ─── WEBSOCKET ────────────────────────────────────────────────────────────────
+
+@router.websocket("/ws/{token}")
+async def websocket_endpoint(websocket: WebSocket, token: str):
+    """
+    WebSocket for real-time notifications.
+    Uses Redis Pub/Sub to receive messages from background workers (Celery).
+    """
+    db = next(get_db())
+    try:
+        user = get_user_from_token(token, db)
+    except Exception:
+        await websocket.close(code=1008) # Policy Violation
+        return
+
+    await manager.connect(websocket, user.id)
+    
+    # Subscribe to user's notification channel in Redis
+    redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe(f"user_notifications:{user.id}")
+
+    async def listen_to_redis():
+        try:
+            async for message in pubsub.listen():
+                if message["type"] == "message":
+                    data = json.loads(message["data"])
+                    await websocket.send_json(data)
+        except Exception:
+            pass
+
+    # Start background listener for this websocket
+    listener_task = asyncio.create_task(listen_to_redis())
+
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        listener_task.cancel()
+        await pubsub.unsubscribe(f"user_notifications:{user.id}")
+        await redis_client.close()
+        manager.disconnect(websocket, user.id)
 
 
 # ─── GET MY NOTIFICATIONS ─────────────────────────────────────────────────────

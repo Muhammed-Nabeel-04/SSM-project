@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'config/constants.dart';
 import 'router.dart' show buildRouter;
 import 'services/auth_provider.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
 import 'core/app_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupCrashHandlers();
   await AppConfig.init();
-  runApp(const SSMApp());
-}
 
-void setupCrashHandlers() {
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-  };
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  const appEnv = String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  const appVersion = '1.0.0+1';
+
+  if (sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = sentryDsn;
+        options.environment = appEnv;
+        options.release = 'ssm-frontend@$appVersion';
+        options.tracesSampleRate = 0.1;
+        options.sendDefaultPii = false;
+      },
+      appRunner: () => runApp(const SSMApp()),
+    );  } else {
+    runApp(const SSMApp());
+  }
 }
 
 class SSMApp extends StatelessWidget {
@@ -48,6 +60,7 @@ class SSMApp extends StatelessWidget {
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) => MaterialApp.router(
           title: AppStrings.appName,
+          scaffoldMessengerKey: NotificationService().messengerKey,
           debugShowCheckedModeBanner: false,
           theme: _buildTheme(),
           routerConfig: buildRouter(auth),

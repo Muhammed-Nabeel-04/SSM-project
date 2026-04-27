@@ -10,6 +10,7 @@ from models.user import User, UserRole, Department
 from models.ssm import SSMForm, FormStatus, CalculatedScore
 from schemas.auth import DepartmentCreate, DepartmentOut, UserOut, UserCreate
 from services.security import require_admin, hash_password
+from worker import csv_import_task
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -198,9 +199,42 @@ def assign_mentor(
 
 # ─── BULK CSV IMPORT ──────────────────────────────────────────────────────────
 
-# In-memory store for background import job status
-# { job_id: { "status": "running"|"done", "result": {...} } }
-_import_jobs: dict = {}
+@router.post("/users/import")
+async def import_users_csv(
+    file: UploadFile = File(...),
+    _:    User       = Depends(require_admin),
+):
+    """Start background CSV import and return a task ID."""
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files allowed")
+    
+    contents = await file.read()
+    text = contents.decode("utf-8")
+    
+    task = csv_import_task.delay(text)
+    
+    return {
+        "message": "Import started in background.",
+        "task_id": task.id
+    }
+
+
+@router.get("/users/import/status/{task_id}")
+def get_import_status(
+    task_id: str,
+    _: User = Depends(require_admin),
+):
+    """Check the status of a background import task."""
+    from worker import celery_app
+    from celery.result import AsyncResult
+    
+    res = AsyncResult(task_id, app=celery_app)
+    
+    return {
+        "task_id": task_id,
+        "status":  res.status, # PENDING, STARTED, SUCCESS, FAILURE
+        "result":  res.result if res.ready() else None
+    }
 
 
 def _run_csv_import(job_id: str, text: str, db_url: str):

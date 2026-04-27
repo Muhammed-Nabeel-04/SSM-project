@@ -40,6 +40,16 @@ class AppConfig {
   // Alias — used throughout the app as AppConfig.baseUrl
   static String get baseUrl => backendUrl;
 
+  static String get wsBaseUrl {
+    final base = baseUrl;
+    if (base.startsWith('https://')) {
+      return base.replaceFirst('https://', 'wss://');
+    } else if (base.startsWith('http://')) {
+      return base.replaceFirst('http://', 'ws://');
+    }
+    return base;
+  }
+
   // Token storage keys (previously in constants.dart)
   static const tokenKey = 'ssm_access_token';
   static const userRoleKey = 'ssm_user_role';

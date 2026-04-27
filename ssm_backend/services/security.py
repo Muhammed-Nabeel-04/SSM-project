@@ -183,6 +183,20 @@ def get_current_user(
     return user
 
 
+def get_user_from_token(token: str, db: Session) -> User:
+    """Helper for WebSockets or other places where Depends(security_scheme) isn't used."""
+    payload = decode_token(token)
+    user_id = int(payload["sub"])
+    user = db.query(User).filter(User.id == user_id, User.is_active == True, User.deleted_at.is_(None)).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+    if not validate_session_in_db(db, token):
+         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
+    
+    return user
+
+
 # ─── ROLE GUARDS ──────────────────────────────────────────────────────────────
 
 def require_role(*roles: UserRole):

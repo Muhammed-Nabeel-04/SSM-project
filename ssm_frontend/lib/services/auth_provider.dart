@@ -2,8 +2,9 @@ import 'dart:async'; // Added import
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../services/token_service.dart';
+import '../services/notification_service.dart';
 
-import 'dart:io'; // ✅ ADD THIS (line 2)
+import 'dart:io';
 
 enum AuthState { unknown, authenticated, unauthenticated }
 
@@ -50,6 +51,7 @@ class AuthProvider extends ChangeNotifier {
       _userId = await TokenService.getUserId();
       _deptId = await TokenService.getDeptId();
       _state = AuthState.authenticated;
+      NotificationService().connect();
       _fetchProfile(); // non-blocking
     } else {
       _state = AuthState.unauthenticated;
@@ -95,6 +97,7 @@ class AuthProvider extends ChangeNotifier {
       _deptId = data['department_id'];
       mustChangePassword = data['must_change_password'] ?? false;
       _state = AuthState.authenticated;
+      NotificationService().connect();
       _loading = false;
       notifyListeners();
       _fetchProfile();
@@ -180,6 +183,7 @@ class AuthProvider extends ChangeNotifier {
       requires2FA = false;
       pendingTwoFactorUserId = null;
       _state = AuthState.authenticated;
+      NotificationService().connect();
       _loading = false;
       notifyListeners();
       _fetchProfile();
@@ -273,6 +277,7 @@ class AuthProvider extends ChangeNotifier {
   // ─── LOGOUT ───────────────────────────────────────────────
   Future<void> logout() async {
     await ApiService.logout();
+    NotificationService().disconnect();
     _state = AuthState.unauthenticated;
     _role = null;
     _name = null;
