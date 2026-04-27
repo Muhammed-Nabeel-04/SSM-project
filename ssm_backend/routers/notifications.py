@@ -56,8 +56,15 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            # Keep connection alive
-            await websocket.receive_text()
+            # Keep connection alive, handle pings
+            msg_text = await websocket.receive_text()
+            try:
+                data = json.loads(msg_text)
+                if data.get("type") == "ping":
+                    # Optionally reply with pong, but receive_text is enough to keep alive
+                    pass
+            except:
+                pass
     except WebSocketDisconnect:
         pass
     finally:

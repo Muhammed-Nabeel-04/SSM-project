@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../core/app_config.dart';
@@ -11,6 +12,8 @@ class NotificationService {
 
   WebSocketChannel? _channel;
   bool _isConnected = false;
+  StreamSubscription? _subscription;
+  Timer? _heartbeatTimer;
 
   final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -29,25 +32,38 @@ class NotificationService {
       // ── Send Handshake ─────────────────────────────────────────────────────
       _channel!.sink.add(jsonEncode({'token': token}));
 
-      _channel!.stream.listen(
+      _subscription = _channel!.stream.listen(
         (message) {
           _handleMessage(message);
         },
-        onDone: () {
-          _isConnected = false;
-          // Reconnect logic can go here
-          Future.delayed(const Duration(seconds: 5), () => connect());
-        },
-        onError: (error) {
-          _isConnected = false;
-        },
+        onDone: () => _handleDisconnect(),
+        onError: (error) => _handleDisconnect(),
       );
+
+      // ── Start Heartbeat ────────────────────────────────────────────────────
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
+        if (_isConnected) {
+          _channel?.sink.add(jsonEncode({'type': 'ping'}));
+        }
+      });
+
     } catch (e) {
-      _isConnected = false;
+      _handleDisconnect();
     }
   }
 
+  void _handleDisconnect() {
+    _isConnected = false;
+    _subscription?.cancel();
+    _heartbeatTimer?.cancel();
+    // Reconnect after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () => connect());
+  }
+
   void disconnect() {
+    _heartbeatTimer?.cancel();
+    _subscription?.cancel();
     _channel?.sink.close();
     _isConnected = false;
   }

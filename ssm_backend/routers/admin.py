@@ -241,9 +241,13 @@ def _run_csv_import(job_id: str, text: str, db_url: str):
     """Background task: processes the CSV and updates _import_jobs[job_id]."""
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from sqlalchemy.pool import NullPool
 
-    engine = create_engine(db_url, poolclass=NullPool)
+    # Use the same robust pooling settings as database.py
+    engine = create_engine(
+        db_url,
+        pool_pre_ping=True,
+        pool_recycle=300
+    )
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
 

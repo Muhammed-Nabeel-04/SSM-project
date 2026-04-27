@@ -33,7 +33,7 @@ class ApiService {
 
   // ─── HELPERS ──────────────────────────────────────────────
 
-  static const _timeout = Duration(seconds: 30);
+  static const _timeout = Duration(seconds: 45);
 
   static Future<Map<String, String>> _authHeaders() async {
     final token = await TokenService.getToken();
