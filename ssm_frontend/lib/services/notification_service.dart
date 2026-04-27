@@ -20,11 +20,14 @@ class NotificationService {
     final token = await TokenService.getToken();
     if (token == null) return;
 
-    final wsUrl = '${AppConfig.wsBaseUrl}/notifications/ws/$token';
+    final wsUrl = '${AppConfig.wsBaseUrl}/notifications/ws';
     
     try {
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _isConnected = true;
+
+      // ── Send Handshake ─────────────────────────────────────────────────────
+      _channel!.sink.add(jsonEncode({'token': token}));
 
       _channel!.stream.listen(
         (message) {

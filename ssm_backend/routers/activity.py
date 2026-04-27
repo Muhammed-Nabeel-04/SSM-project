@@ -368,7 +368,7 @@ async def submit_activity(
         db.refresh(activity)
 
         # ── Trigger Background OCR ───────────────────────────────────────────
-        process_ocr_task.delay(activity.id, contents, ext, current_user.name)
+        process_ocr_task.delay(activity.id, activity.file_path, ext, current_user.name)
 
         return {
             "activity_id":    activity.id,

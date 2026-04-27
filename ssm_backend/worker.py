@@ -30,14 +30,21 @@ celery_app.conf.task_routes = {
     retry_backoff=True,
     max_retries=3
 )
-def process_ocr_task(activity_id: int, contents: bytes, ext: str, student_name: str):
+def process_ocr_task(activity_id: int, file_path: str, ext: str, student_name: str):
     """
-    Background OCR processing.
+    Background OCR processing. Downloads file from storage before processing.
     """
     db = SessionLocal()
     try:
         from services.ocr import _run_ocr_verify
+        from services.storage import storage_service
         
+        # Download file content from storage
+        contents = storage_service.download_file(file_path)
+        if not contents:
+            print(f"OCR Task Error: Could not download {file_path}")
+            return
+
         ocr_text, ocr_status, ocr_note = _run_ocr_verify(contents, ext, student_name)
         
         activity = db.query(StudentActivity).filter(StudentActivity.id == activity_id).first()

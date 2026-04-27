@@ -16,14 +16,20 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 # ─── WEBSOCKET ────────────────────────────────────────────────────────────────
 
-@router.websocket("/ws/{token}")
-async def websocket_endpoint(websocket: WebSocket, token: str):
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket for real-time notifications.
-    Uses Redis Pub/Sub to receive messages from background workers (Celery).
+    Handshake: The first message from client MUST be {"token": "..."}
     """
-    db = next(get_db())
+    await websocket.accept()
+    
     try:
+        # 1. Wait for auth handshake
+        auth_msg = await websocket.receive_json()
+        token = auth_msg.get("token")
+        
+        db = next(get_db())
         user = get_user_from_token(token, db)
     except Exception:
         await websocket.close(code=1008) # Policy Violation

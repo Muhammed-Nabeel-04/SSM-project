@@ -14,6 +14,13 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import settings
+from database import engine
+from routers import auth, student, mentor, hod, admin
+from routers.files import router as files_router
+from routers.activity import router as activity_router
+from routers.settings import router as academic_router
+from routers.notifications import router as notifications_router
+import models.notification  # Ensure table registration
 
 # ─── SENTRY ──────────────────────────────────────────────────────
 

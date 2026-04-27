@@ -49,6 +49,16 @@ class SupabaseStorageService:
             logger.error(f"Failed to upload {file_path} to Supabase: {str(e)}")
             raise e
 
+    def download_file(self, file_path: str) -> bytes:
+        """Downloads a file from Supabase and returns its bytes."""
+        if not self.enabled:
+            raise Exception("Storage not configured")
+        try:
+            return self.client.storage.from_(self.bucket_name).download(file_path)
+        except Exception as e:
+            logger.error(f"Failed to download {file_path} from Supabase: {str(e)}")
+            raise e
+
     def get_download_url(self, file_path: str) -> str:
         """Return a short-lived signed URL for a private object."""
         if not self.enabled or not self.client:
