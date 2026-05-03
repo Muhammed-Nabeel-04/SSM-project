@@ -11,6 +11,8 @@ from services.scoring import calculate_and_save
 from services.notifications import push_notification
 from models.user import User as UserModel
 
+from services.storage import storage_service
+
 router = APIRouter(prefix="/hod", tags=["HOD"])
 
 
@@ -91,7 +93,14 @@ def get_form(
 
     return {
         "form_id": form.id,
-        "student": {"name": form.student.name, "register_number": form.student.register_number},
+        "student": {
+            "name": form.student.name, 
+            "register_number": form.student.register_number,
+            "phone": form.student.phone,
+            "semester": form.student.semester,
+            "batch": form.student.batch,
+            "section": form.student.section,
+        },
         "academic_year": form.academic_year,
         "status": form.status.value,
         "mentor_remarks": form.mentor_remarks,
@@ -104,6 +113,39 @@ def get_form(
             "grand_total": sc.grand_total if sc else 0,
             "star_rating": sc.star_rating if sc else 0,
         },
+        "activities": [
+            {
+                "id": a.id,
+                "activity_type": a.activity_type.value,
+                "mentor_status": a.mentor_status.value,
+                "ocr_status": a.ocr_status.value,
+                "mentor_note": a.mentor_note,
+                "has_file": a.file_path is not None,
+                "filename": a.original_filename,
+                "file_url": (
+                    storage_service.get_download_url(a.file_path)
+                    if a.file_path and storage_service.enabled else None
+                ),
+                "submitted_at": a.submitted_at.isoformat() if a.submitted_at else None,
+                "data": {k: v for k, v in {
+                    "internal_gpa": a.internal_gpa,
+                    "university_gpa": a.university_gpa,
+                    "attendance_pct": a.attendance_pct,
+                    "nptel_tier": a.nptel_tier,
+                    "platform_name": a.platform_name,
+                    "course_name": a.course_name,
+                    "internship_company": a.internship_company,
+                    "competition_name": a.competition_name,
+                    "competition_result": a.competition_result,
+                    "placement_company": a.placement_company,
+                    "placement_lpa": a.placement_lpa,
+                    "role_name": a.role_name,
+                    "event_name": a.event_name,
+                    "community_org": a.community_org,
+                }.items() if v is not None},
+            }
+            for a in form.activities
+        ],
         "documents": [
             {"id": d.id, "category": d.category, "type": d.document_type,
              "status": d.verification_status}

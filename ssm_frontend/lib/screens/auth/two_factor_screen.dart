@@ -6,8 +6,6 @@ import '../../config/constants.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_provider.dart';
 
-/// Screen for Admin/HOD/Mentor to set up and manage 2FA.
-/// Accessible from their profile / settings area.
 class TwoFactorScreen extends StatefulWidget {
   const TwoFactorScreen({super.key});
 

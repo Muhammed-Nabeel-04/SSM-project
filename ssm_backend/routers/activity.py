@@ -688,10 +688,15 @@ def download_activity_file(
     # Access control
     if current_user.role == UserRole.STUDENT and act.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+    
     if current_user.role == UserRole.MENTOR:
         form_ids = [f.id for f in db.query(SSMForm).filter(SSMForm.mentor_id == current_user.id).all()]
         if act.form_id not in form_ids:
             raise HTTPException(status_code=403, detail="Access denied")
+
+    if current_user.role == UserRole.HOD:
+        if act.student.department_id != current_user.department_id:
+            raise HTTPException(status_code=403, detail="Access denied — different department")
 
     if not act.file_path:
         raise HTTPException(status_code=404, detail="File not found")

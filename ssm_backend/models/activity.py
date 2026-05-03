@@ -131,5 +131,5 @@ class StudentActivity(Base):
     deleted_at    = Column(DateTime, nullable=True)
 
     # Relationships
-    form    = relationship("SSMForm", foreign_keys=[form_id])
+    form    = relationship("SSMForm", foreign_keys=[form_id], overlaps="activities")
     student = relationship("User",    foreign_keys=[student_id])
