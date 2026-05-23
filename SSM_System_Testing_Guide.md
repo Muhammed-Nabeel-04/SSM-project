@@ -1,4 +1,4 @@
-# SSM System - Application Testing Guide
+# SSM System - workflow
 
 Welcome to the **Student Success Matrix (SSM)** application. This guide will walk you through the complete end-to-end flow of the system.
 
